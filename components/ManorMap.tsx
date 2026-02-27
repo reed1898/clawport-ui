@@ -88,7 +88,7 @@ function buildLayout(agents: Agent[], crons: CronJob[]): { nodes: Node[]; edges:
         source: agent.id,
         target: childId,
         animated: true,
-        style: { stroke: agent.color, strokeWidth: 1, opacity: 0.3 },
+        style: { stroke: agent.color, strokeWidth: 2, opacity: 0.85 },
       });
     }
   }

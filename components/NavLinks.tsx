@@ -23,7 +23,7 @@ export function NavLinks() {
   return (
     <nav className="flex-1 flex flex-col">
       <div className="px-2 py-3">
-        <div className="px-3 mb-1 text-[10px] font-semibold text-[rgba(235,235,245,0.3)] tracking-[0.08em]">
+        <div className="px-3 mb-1 text-[10px] font-semibold tracking-[0.08em]" style={{ color: 'var(--text-tertiary)' }}>
           WORKSPACE
         </div>
         <div className="space-y-0.5">
@@ -39,16 +39,23 @@ export function NavLinks() {
                 href={item.href}
                 className={`flex items-center gap-2.5 px-3 py-[7px] rounded-lg transition-all duration-150 ${
                   isActive
-                    ? "bg-[rgba(245,197,24,0.15)] text-[#f5c518] font-semibold"
-                    : "text-[rgba(235,235,245,0.6)] hover:bg-[rgba(120,120,128,0.16)] hover:text-white"
+                    ? "font-semibold"
+                    : "hover:text-white"
                 }`}
+                style={isActive
+                  ? { background: 'var(--accent-dim)', color: 'var(--accent)' }
+                  : { color: 'var(--text-secondary)' }
+                }
               >
                 <span className="w-[18px] h-[18px] flex items-center justify-center text-sm flex-shrink-0">
                   {item.icon}
                 </span>
                 <span className="text-[13px] font-medium">{item.label}</span>
                 {item.href === "/" && agentCount !== null && (
-                  <span className="ml-auto text-[10px] font-mono text-[rgba(235,235,245,0.5)] bg-[#2c2c2e] px-1.5 py-0.5 rounded">
+                  <span
+                    className="ml-auto text-[10px] font-mono px-1.5 py-0.5 rounded"
+                    style={{ color: 'var(--text-secondary)', background: 'var(--bg-grouped)' }}
+                  >
                     {agentCount}
                   </span>
                 )}
@@ -58,14 +65,17 @@ export function NavLinks() {
         </div>
       </div>
       <div className="flex-1" />
-      <div className="p-4 border-t border-[rgba(84,84,88,0.4)]">
+      <div className="p-4" style={{ borderTop: '1px solid var(--border)' }}>
         <div className="flex items-center gap-3 px-3 py-2">
-          <div className="w-8 h-8 rounded-full bg-[#2c2c2e] flex items-center justify-center text-[13px] font-medium text-[rgba(235,235,245,0.6)] flex-shrink-0">
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-medium flex-shrink-0"
+            style={{ background: 'var(--bg-grouped)', color: 'var(--text-secondary)' }}
+          >
             JR
           </div>
           <div className="min-w-0">
-            <div className="text-[13px] font-medium text-white truncate">John Rice</div>
-            <div className="text-[11px] text-[rgba(235,235,245,0.5)]">Owner</div>
+            <div className="text-[13px] font-medium truncate" style={{ color: 'var(--text-primary)' }}>John Rice</div>
+            <div className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>Owner</div>
           </div>
         </div>
       </div>

@@ -149,8 +149,8 @@ export default function ChatPage({
   /* ─── Loading state ─── */
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full bg-black">
-        <span className="text-[15px] text-[#f5c518] animate-pulse">
+      <div className="flex items-center justify-center h-full" style={{ background: 'var(--bg)' }}>
+        <span className="text-[15px] animate-pulse" style={{ color: 'var(--accent)' }}>
           Connecting...
         </span>
       </div>
@@ -160,13 +160,14 @@ export default function ChatPage({
   /* ─── Not found state ─── */
   if (!agent) {
     return (
-      <div className="flex flex-col items-center justify-center h-full bg-black gap-3">
-        <span className="text-[15px] text-[rgba(235,235,245,0.6)]">
+      <div className="flex flex-col items-center justify-center h-full gap-3" style={{ background: 'var(--bg)' }}>
+        <span className="text-[15px]" style={{ color: 'var(--text-secondary)' }}>
           Agent not found
         </span>
         <Link
           href="/"
-          className="text-[15px] text-[#0a84ff] hover:underline"
+          className="text-[15px] hover:underline"
+          style={{ color: 'var(--blue)' }}
         >
           &larr; Back to Agents
         </Link>
@@ -177,7 +178,7 @@ export default function ChatPage({
   const hasInput = input.trim().length > 0;
 
   return (
-    <div className="flex flex-col h-full bg-black">
+    <div className="flex flex-col h-full" style={{ background: 'var(--bg)' }}>
       {/* ─── Color stripe ─── */}
       <div
         className="h-[3px] w-full flex-shrink-0"
@@ -186,13 +187,14 @@ export default function ChatPage({
 
       {/* ─── Header ─── */}
       <div
-        className="bg-[#1c1c1e] px-4 py-3 flex items-center justify-between flex-shrink-0"
-        style={{ boxShadow: "0 1px 0 rgba(84,84,88,0.4)" }}
+        className="px-4 py-3 flex items-center justify-between flex-shrink-0"
+        style={{ background: 'var(--bg-elevated)', boxShadow: `0 1px 0 var(--border)` }}
       >
         {/* Left — back link */}
         <Link
           href="/"
-          className="text-[15px] text-[#0a84ff] hover:opacity-80 transition-opacity flex-shrink-0"
+          className="text-[15px] hover:opacity-80 transition-opacity flex-shrink-0"
+          style={{ color: 'var(--blue)' }}
         >
           &larr; Agents
         </Link>
@@ -201,11 +203,11 @@ export default function ChatPage({
         <div className="flex flex-col items-center min-w-0">
           <div className="flex items-center gap-1.5">
             <span className="text-[17px]">{agent.emoji}</span>
-            <span className="text-[17px] font-semibold text-white truncate">
+            <span className="text-[17px] font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
               {agent.name}
             </span>
           </div>
-          <span className="text-[12px] text-[rgba(235,235,245,0.6)] truncate">
+          <span className="text-[12px] truncate" style={{ color: 'var(--text-secondary)' }}>
             {agent.title}
           </span>
         </div>
@@ -213,7 +215,8 @@ export default function ChatPage({
         {/* Right — clear button */}
         <button
           onClick={clearChat}
-          className="text-[rgba(235,235,245,0.4)] hover:text-white transition-colors text-[15px] flex-shrink-0"
+          className="hover:opacity-80 transition-colors text-[15px] flex-shrink-0"
+          style={{ color: 'var(--text-tertiary)' }}
           title="Clear conversation"
         >
           <svg
@@ -236,7 +239,7 @@ export default function ChatPage({
       </div>
 
       {/* ─── Messages ─── */}
-      <div className="flex-1 overflow-y-auto px-4 py-5 space-y-1 bg-black">
+      <div className="flex-1 overflow-y-auto px-4 py-5 space-y-1" style={{ background: 'var(--bg)' }}>
         {messages.map((msg, i) => {
           const isUser = msg.role === "user";
           const showAvatar = shouldShowAvatar(messages, i);
@@ -277,30 +280,31 @@ export default function ChatPage({
                     className={
                       isUser
                         ? "px-[14px] py-[10px] rounded-[20px] rounded-tr-[6px] text-[15px] font-medium text-black"
-                        : "px-[14px] py-[10px] rounded-[20px] rounded-tl-[6px] text-[15px] text-white"
+                        : "px-[14px] py-[10px] rounded-[20px] rounded-tl-[6px] text-[15px] glass-card msg-assistant"
                     }
                     style={
                       isUser
                         ? {
                             background:
-                              "linear-gradient(135deg, #f5c518, #d4a800)",
+                              "linear-gradient(135deg, var(--accent), #d4a800)",
                             boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
                           }
                         : {
-                            backgroundColor: "#1c1c1e",
-                            border: "1px solid rgba(84,84,88,0.4)",
-                            boxShadow: "0 1px 4px rgba(0,0,0,0.3)",
+                            backgroundColor: "var(--bg-elevated)",
+                            border: "1px solid var(--border)",
+                            boxShadow: "var(--shadow-sm)",
+                            color: "var(--text-primary)",
                           }
                     }
                   >
                     {msg.content}
                     {isLastAssistant && !msg.content && (
-                      <span className="text-[#f5c518] animate-blink">
+                      <span className="animate-blink" style={{ color: 'var(--accent)' }}>
                         &#9612;
                       </span>
                     )}
                     {isLastAssistant && msg.content && (
-                      <span className="text-[#f5c518] animate-blink ml-0.5">
+                      <span className="animate-blink ml-0.5" style={{ color: 'var(--accent)' }}>
                         &#9612;
                       </span>
                     )}
@@ -308,9 +312,10 @@ export default function ChatPage({
 
                   {/* Timestamp on hover */}
                   <span
-                    className={`text-[11px] text-[rgba(235,235,245,0.4)] mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ${
+                    className={`text-[11px] mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ${
                       isUser ? "text-right mr-1" : "text-left ml-1"
                     }`}
+                    style={{ color: 'var(--text-tertiary)' }}
                   >
                     {timeStr(msg.timestamp)}
                   </span>
@@ -324,14 +329,14 @@ export default function ChatPage({
 
       {/* ─── Input area ─── */}
       <div
-        className="bg-[#1c1c1e] px-4 pt-3 pb-2 flex-shrink-0"
-        style={{ boxShadow: "0 -1px 0 rgba(84,84,88,0.4)" }}
+        className="px-4 pt-3 pb-2 flex-shrink-0 chat-input-area"
+        style={{ background: 'var(--bg-elevated)', boxShadow: `0 -1px 0 var(--border)` }}
       >
         <div className="flex items-end gap-2">
           {/* Input bubble */}
           <div
-            className="flex-1 rounded-[20px] bg-[#2c2c2e] transition-colors duration-200"
-            style={{ border: "1px solid rgba(84,84,88,0.4)" }}
+            className="flex-1 transition-colors duration-200"
+            style={{ borderRadius: '20px', background: 'var(--bg-grouped)', border: '1px solid var(--border)' }}
           >
             <textarea
               ref={textareaRef}
@@ -341,10 +346,11 @@ export default function ChatPage({
               placeholder={`Message ${agent.name}...`}
               rows={1}
               disabled={isStreaming}
-              className="w-full bg-transparent px-4 py-2.5 text-[15px] text-white placeholder-[rgba(235,235,245,0.4)] resize-none focus:outline-none disabled:opacity-50"
+              className="w-full bg-transparent px-4 py-2.5 text-[15px] resize-none focus:outline-none disabled:opacity-50"
               style={{
                 minHeight: "40px",
                 maxHeight: "120px",
+                color: 'var(--text-primary)',
               }}
               onInput={(e) => {
                 const target = e.target as HTMLTextAreaElement;
@@ -355,13 +361,13 @@ export default function ChatPage({
               onFocus={(e) => {
                 const parent = e.target.parentElement;
                 if (parent) {
-                  parent.style.borderColor = "rgba(245,197,24,0.5)";
+                  parent.style.borderColor = "var(--accent-ring)";
                 }
               }}
               onBlur={(e) => {
                 const parent = e.target.parentElement;
                 if (parent) {
-                  parent.style.borderColor = "rgba(84,84,88,0.4)";
+                  parent.style.borderColor = "var(--border)";
                 }
               }}
             />
@@ -381,7 +387,7 @@ export default function ChatPage({
               disabled={isStreaming || !hasInput}
               className="w-[36px] h-[36px] rounded-full flex items-center justify-center text-black font-bold text-[18px] transition-all duration-150 active:scale-90 disabled:opacity-50"
               style={{
-                background: "linear-gradient(135deg, #f5c518, #d4a800)",
+                background: "linear-gradient(135deg, var(--accent), #d4a800)",
               }}
               title="Send message"
             >
@@ -391,7 +397,7 @@ export default function ChatPage({
         </div>
 
         {/* Helper text */}
-        <p className="text-[11px] text-[rgba(235,235,245,0.3)] text-center mt-2 mb-0.5">
+        <p className="text-[11px] text-center mt-2 mb-0.5" style={{ color: 'var(--text-tertiary)' }}>
           &#8629; Send &middot; &#8679;&#8629; New line
         </p>
       </div>

@@ -10,7 +10,7 @@ const ManorMap = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex items-center justify-center h-full">
-        <div className="text-[#f5c518] text-[13px] animate-pulse">
+        <div className="text-[13px] animate-pulse" style={{ color: 'var(--accent)' }}>
           Scanning the manor...
         </div>
       </div>
@@ -32,11 +32,12 @@ function StatusDot({ status }: { status: CronJob["status"] }) {
   const colors = {
     ok: "bg-[#30d158]",
     error: "bg-[#ff453a] animate-error-pulse",
-    idle: "bg-[rgba(235,235,245,0.3)]",
+    idle: "",
   };
   return (
     <span
       className={`inline-block w-1.5 h-1.5 rounded-full flex-shrink-0 ${colors[status]}`}
+      style={status === "idle" ? { background: 'var(--text-tertiary)' } : undefined}
     />
   );
 }
@@ -68,19 +69,19 @@ export default function ManorPage() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-full text-[#ff453a] text-[13px]">
+      <div className="flex items-center justify-center h-full text-[13px]" style={{ color: 'var(--red)' }}>
         Error loading manor: {error}
       </div>
     );
   }
 
   return (
-    <div className="flex h-full bg-black">
+    <div className="flex h-full" style={{ background: 'var(--bg)' }}>
       {/* Map */}
       <div className="flex-1 h-full">
         {loading ? (
           <div className="flex items-center justify-center h-full">
-            <div className="text-[#f5c518] text-[13px] animate-pulse">
+            <div className="text-[13px] animate-pulse" style={{ color: 'var(--accent)' }}>
               Scanning the manor...
             </div>
           </div>
@@ -92,8 +93,9 @@ export default function ManorPage() {
       {/* Agent detail panel */}
       {selected ? (
         <div
-          className="w-[320px] flex-shrink-0 bg-[#1c1c1e] flex flex-col overflow-y-auto animate-slide-in"
+          className="w-[320px] flex-shrink-0 flex flex-col overflow-y-auto animate-slide-in glass-card"
           style={{
+            background: 'var(--bg-elevated)',
             boxShadow: "-2px 0 20px rgba(0,0,0,0.5)",
           }}
         >
@@ -101,19 +103,23 @@ export default function ManorPage() {
           <div className="px-5 pt-4 pb-0 flex justify-end">
             <button
               onClick={() => setSelected(null)}
-              className="w-7 h-7 flex items-center justify-center rounded-full bg-[rgba(120,120,128,0.2)] text-[rgba(235,235,245,0.6)] hover:bg-[rgba(120,120,128,0.36)] hover:text-white transition-colors text-[13px]"
+              className="w-7 h-7 flex items-center justify-center rounded-full transition-colors text-[13px]"
+              style={{ background: 'var(--bg-fill-2)', color: 'var(--text-secondary)' }}
             >
               ✕
             </button>
           </div>
 
-          {/* Header */}
-          <div className="px-5 pt-1 pb-4">
+          {/* Header — glass gradient overlay */}
+          <div className="px-5 pt-1 pb-4" style={{
+            background: 'linear-gradient(135deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
+            borderRadius: 'var(--radius) var(--radius) 0 0',
+          }}>
             <div className="text-[40px] leading-none mb-2">{selected.emoji}</div>
-            <h2 className="text-[22px] font-bold tracking-tight text-white leading-tight">
+            <h2 className="text-[22px] font-bold tracking-tight leading-tight" style={{ color: 'var(--text-primary)' }}>
               {selected.name}
             </h2>
-            <p className="text-[13px] text-[rgba(235,235,245,0.6)] mt-0.5">
+            <p className="text-[13px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>
               {selected.title}
             </p>
 
@@ -131,21 +137,22 @@ export default function ManorPage() {
 
           {/* Description */}
           <div className="px-5 pb-4">
-            <p className="text-[14px] text-[rgba(235,235,245,0.7)] leading-[1.6]">
+            <p className="text-[14px] leading-[1.6]" style={{ color: 'var(--text-secondary)' }}>
               {selected.description}
             </p>
           </div>
 
           {/* Tools section */}
           <div className="px-5 pb-4">
-            <div className="text-[10px] font-semibold tracking-[0.08em] text-[rgba(235,235,245,0.3)] uppercase mt-5 mb-2">
+            <div className="text-[10px] font-semibold tracking-[0.08em] uppercase mt-5 mb-2" style={{ color: 'var(--text-tertiary)' }}>
               Tools
             </div>
             <div className="flex flex-wrap gap-1.5">
               {selected.tools.map((t) => (
                 <span
                   key={t}
-                  className="inline-flex items-center gap-1 text-[11px] font-mono bg-[rgba(120,120,128,0.2)] text-[rgba(235,235,245,0.6)] px-2.5 py-1 rounded-full"
+                  className="inline-flex items-center gap-1 text-[11px] font-mono px-2.5 py-1 rounded-full"
+                  style={{ background: 'var(--bg-fill-2)', color: 'var(--text-secondary)' }}
                 >
                   {TOOL_ICONS[t] && (
                     <span className="text-[10px]">{TOOL_ICONS[t]}</span>
@@ -159,7 +166,7 @@ export default function ManorPage() {
           {/* Crons section */}
           {agentCrons.length > 0 && (
             <div className="px-5 pb-4">
-              <div className="text-[10px] font-semibold tracking-[0.08em] text-[rgba(235,235,245,0.3)] uppercase mt-5 mb-2">
+              <div className="text-[10px] font-semibold tracking-[0.08em] uppercase mt-5 mb-2" style={{ color: 'var(--text-tertiary)' }}>
                 Crons
               </div>
               <div className="space-y-2.5">
@@ -167,10 +174,10 @@ export default function ManorPage() {
                   <div key={c.id} className="flex items-center gap-2">
                     <StatusDot status={c.status} />
                     <div className="min-w-0 flex-1">
-                      <span className="text-[13px] font-mono text-white truncate block">
+                      <span className="text-[13px] font-mono truncate block" style={{ color: 'var(--text-primary)' }}>
                         {c.name}
                       </span>
-                      <span className="text-[11px] text-[rgba(235,235,245,0.5)]">
+                      <span className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
                         {c.schedule}
                       </span>
                     </div>
@@ -184,13 +191,15 @@ export default function ManorPage() {
           <div className="mt-auto px-5 py-5 space-y-2">
             <button
               onClick={() => router.push(`/chat/${selected.id}`)}
-              className="w-full bg-[#f5c518] text-black font-semibold text-[15px] py-3 rounded-xl hover:bg-[#e8b800] transition-colors"
+              className="w-full font-semibold text-[15px] py-3 rounded-xl transition-colors"
+              style={{ background: 'var(--accent)', color: '#000' }}
             >
               Open Chat
             </button>
             <button
               onClick={() => router.push(`/agents/${selected.id}`)}
-              className="w-full bg-[rgba(120,120,128,0.16)] text-white text-[15px] py-3 rounded-xl hover:bg-[rgba(120,120,128,0.28)] transition-colors"
+              className="w-full text-[15px] py-3 rounded-xl transition-colors"
+              style={{ background: 'var(--bg-fill-2)', color: 'var(--text-primary)' }}
             >
               View Details
             </button>
@@ -199,17 +208,18 @@ export default function ManorPage() {
       ) : (
         /* Empty state — no agent selected */
         <div
-          className="w-[320px] flex-shrink-0 bg-[#1c1c1e] flex items-center justify-center"
+          className="w-[320px] flex-shrink-0 flex items-center justify-center glass-card"
           style={{
+            background: 'var(--bg-elevated)',
             boxShadow: "-2px 0 20px rgba(0,0,0,0.5)",
           }}
         >
           <div className="text-center px-6">
             <div className="text-[48px] mb-3">🕵️</div>
-            <div className="text-[17px] font-semibold text-white">
+            <div className="text-[17px] font-semibold" style={{ color: 'var(--text-primary)' }}>
               Select an agent
             </div>
-            <div className="text-[13px] text-[rgba(235,235,245,0.5)] mt-1">
+            <div className="text-[13px] mt-1" style={{ color: 'var(--text-secondary)' }}>
               Click any node on the map to inspect
             </div>
           </div>

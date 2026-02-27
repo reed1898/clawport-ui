@@ -1,6 +1,224 @@
 @import "tailwindcss";
 @import "@xyflow/react/dist/style.css";
 
+/* ============================================
+   MANOR UI — THEME SYSTEM
+   ============================================ */
+
+/* DEFAULT (Dark — Apple dark mode) */
+:root, [data-theme="dark"] {
+  --bg:           #000000;
+  --bg-elevated:  #1c1c1e;
+  --bg-grouped:   #2c2c2e;
+  --bg-fill:      rgba(120,120,128,0.36);
+  --bg-fill-2:    rgba(120,120,128,0.20);
+  --border:       rgba(84,84,88,0.40);
+  --border-light: rgba(84,84,88,0.20);
+  --text-primary: #ffffff;
+  --text-secondary: rgba(235,235,245,0.60);
+  --text-tertiary:  rgba(235,235,245,0.30);
+  --accent:       #f5c518;
+  --accent-dim:   rgba(245,197,24,0.15);
+  --accent-ring:  rgba(245,197,24,0.35);
+  --blue:         #0a84ff;
+  --green:        #30d158;
+  --red:          #ff453a;
+  --orange:       #ff9f0a;
+  --purple:       #bf5af2;
+  --shadow-sm:    0 2px 8px rgba(0,0,0,0.45);
+  --shadow-md:    0 4px 20px rgba(0,0,0,0.55);
+  --shadow-lg:    0 8px 40px rgba(0,0,0,0.65);
+  --inset-shine:  inset 0 1px 0 rgba(255,255,255,0.06);
+  --radius:       12px;
+  --sidebar-bg:   #111113;
+  --sidebar-border: rgba(84,84,88,0.30);
+}
+
+/* GLASS */
+[data-theme="glass"] {
+  --bg:           #0d0d18;
+  --bg-elevated:  rgba(255,255,255,0.07);
+  --bg-grouped:   rgba(255,255,255,0.05);
+  --bg-fill:      rgba(255,255,255,0.10);
+  --bg-fill-2:    rgba(255,255,255,0.06);
+  --border:       rgba(255,255,255,0.14);
+  --border-light: rgba(255,255,255,0.08);
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255,255,255,0.60);
+  --text-tertiary:  rgba(255,255,255,0.30);
+  --accent:       #f5c518;
+  --accent-dim:   rgba(245,197,24,0.18);
+  --accent-ring:  rgba(245,197,24,0.40);
+  --blue:         #3b9eff;
+  --green:        #34d058;
+  --red:          #ff5c57;
+  --orange:       #ffb340;
+  --purple:       #cc6ff0;
+  --shadow-sm:    0 2px 12px rgba(0,0,0,0.35);
+  --shadow-md:    0 8px 32px rgba(0,0,0,0.45);
+  --shadow-lg:    0 16px 56px rgba(0,0,0,0.55);
+  --inset-shine:  inset 0 1px 0 rgba(255,255,255,0.15);
+  --radius:       16px;
+  --sidebar-bg:   rgba(255,255,255,0.05);
+  --sidebar-border: rgba(255,255,255,0.10);
+}
+
+/* COLOR (Vibrant dark) */
+[data-theme="color"] {
+  --bg:           #0a0814;
+  --bg-elevated:  #16112a;
+  --bg-grouped:   #1e1838;
+  --bg-fill:      rgba(139,92,246,0.25);
+  --bg-fill-2:    rgba(139,92,246,0.15);
+  --border:       rgba(139,92,246,0.30);
+  --border-light: rgba(139,92,246,0.15);
+  --text-primary: #ffffff;
+  --text-secondary: rgba(220,210,255,0.70);
+  --text-tertiary:  rgba(220,210,255,0.35);
+  --accent:       #f5c518;
+  --accent-dim:   rgba(245,197,24,0.20);
+  --accent-ring:  rgba(245,197,24,0.45);
+  --blue:         #60a5fa;
+  --green:        #34d399;
+  --red:          #f87171;
+  --orange:       #fb923c;
+  --purple:       #c084fc;
+  --shadow-sm:    0 2px 12px rgba(88,28,135,0.35);
+  --shadow-md:    0 8px 32px rgba(88,28,135,0.40);
+  --shadow-lg:    0 16px 56px rgba(88,28,135,0.50);
+  --inset-shine:  inset 0 1px 0 rgba(139,92,246,0.20);
+  --radius:       14px;
+  --sidebar-bg:   #0f0b20;
+  --sidebar-border: rgba(139,92,246,0.25);
+}
+
+/* LIGHT (Apple light mode) */
+[data-theme="light"] {
+  --bg:           #f2f2f7;
+  --bg-elevated:  #ffffff;
+  --bg-grouped:   #f2f2f7;
+  --bg-fill:      rgba(120,120,128,0.20);
+  --bg-fill-2:    rgba(120,120,128,0.12);
+  --border:       rgba(60,60,67,0.18);
+  --border-light: rgba(60,60,67,0.10);
+  --text-primary: #000000;
+  --text-secondary: rgba(60,60,67,0.60);
+  --text-tertiary:  rgba(60,60,67,0.35);
+  --accent:       #d4a017;
+  --accent-dim:   rgba(212,160,23,0.12);
+  --accent-ring:  rgba(212,160,23,0.30);
+  --blue:         #007aff;
+  --green:        #28cd41;
+  --red:          #ff3b30;
+  --orange:       #ff9500;
+  --purple:       #af52de;
+  --shadow-sm:    0 1px 6px rgba(0,0,0,0.10);
+  --shadow-md:    0 4px 16px rgba(0,0,0,0.12);
+  --shadow-lg:    0 8px 32px rgba(0,0,0,0.15);
+  --inset-shine:  inset 0 1px 0 rgba(255,255,255,0.80);
+  --radius:       12px;
+  --sidebar-bg:   #ffffff;
+  --sidebar-border: rgba(60,60,67,0.15);
+}
+
+/* SYSTEM — handled by JS (ThemeProvider sets data-theme to dark or light based on OS) */
+/* Fallback if JS hasn't run yet */
+@media (prefers-color-scheme: light) {
+  [data-theme="system"] {
+    --bg:           #f2f2f7;
+    --bg-elevated:  #ffffff;
+    --bg-grouped:   #f2f2f7;
+    --bg-fill:      rgba(120,120,128,0.20);
+    --bg-fill-2:    rgba(120,120,128,0.12);
+    --border:       rgba(60,60,67,0.18);
+    --border-light: rgba(60,60,67,0.10);
+    --text-primary: #000000;
+    --text-secondary: rgba(60,60,67,0.60);
+    --text-tertiary:  rgba(60,60,67,0.35);
+    --accent:       #d4a017;
+    --accent-dim:   rgba(212,160,23,0.12);
+    --accent-ring:  rgba(212,160,23,0.30);
+    --blue:         #007aff;
+    --green:        #28cd41;
+    --red:          #ff3b30;
+    --orange:       #ff9500;
+    --purple:       #af52de;
+    --shadow-sm:    0 1px 6px rgba(0,0,0,0.10);
+    --shadow-md:    0 4px 16px rgba(0,0,0,0.12);
+    --shadow-lg:    0 8px 32px rgba(0,0,0,0.15);
+    --inset-shine:  inset 0 1px 0 rgba(255,255,255,0.80);
+    --radius:       12px;
+    --sidebar-bg:   #ffffff;
+    --sidebar-border: rgba(60,60,67,0.15);
+  }
+}
+
+/* ── Glass theme — deep space background ── */
+[data-theme="glass"] body {
+  background: radial-gradient(ellipse at 30% 20%, #1a1040 0%, #0d0d18 40%, #050510 100%);
+  min-height: 100vh;
+}
+
+/* Glass cards — frosted window effect */
+[data-theme="glass"] .apple-card,
+[data-theme="glass"] .glass-card {
+  background: rgba(255,255,255,0.07) !important;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255,255,255,0.14) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.40), inset 0 1px 0 rgba(255,255,255,0.15) !important;
+}
+
+/* Glowing edge on focused/active glass elements */
+[data-theme="glass"] .glass-card:hover {
+  border-color: rgba(255,255,255,0.22) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.40), 0 0 0 1px rgba(245,197,24,0.15), inset 0 1px 0 rgba(255,255,255,0.18) !important;
+  transition: all 200ms ease;
+}
+
+/* Sidebar glass */
+[data-theme="glass"] [data-sidebar] {
+  background: rgba(255,255,255,0.05) !important;
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border-right: 1px solid rgba(255,255,255,0.10) !important;
+}
+
+/* Agent nodes on map */
+[data-theme="glass"] .react-flow__node {
+  backdrop-filter: blur(16px);
+}
+
+/* Accent glow for gold elements in glass */
+[data-theme="glass"] .accent-glow {
+  text-shadow: 0 0 20px rgba(245,197,24,0.5);
+}
+
+/* Chat messages in glass */
+[data-theme="glass"] .msg-assistant {
+  background: rgba(255,255,255,0.08) !important;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.12) !important;
+}
+
+/* Input area glass */
+[data-theme="glass"] .chat-input-area {
+  background: rgba(255,255,255,0.06) !important;
+  backdrop-filter: blur(30px);
+  border-top: 1px solid rgba(255,255,255,0.10) !important;
+}
+
+/* Glass orbs — hidden by default, visible only in glass theme */
+.glass-orbs { display: none; }
+[data-theme="glass"] .glass-orbs { display: block; }
+
+/* Subtle name glow in glass theme agent nodes */
+[data-theme="glass"] .agent-name-glow {
+  text-shadow: 0 0 12px rgba(255,255,255,0.25);
+}
+
+/* ============================================ */
+
 @theme {
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
   --font-mono: "SF Mono", Monaco, Menlo, "Courier New", monospace;
@@ -39,8 +257,8 @@
 html { scroll-behavior: smooth; }
 
 body {
-  background: #000000;
-  color: #ffffff;
+  background: var(--bg);
+  color: var(--text-primary);
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -50,26 +268,31 @@ body {
 /* Apple-style scrollbar */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(120,120,128,0.36); border-radius: 4px; border: 2px solid transparent; background-clip: content-box; }
-::-webkit-scrollbar-thumb:hover { background: rgba(120,120,128,0.6); background-clip: content-box; border: 2px solid transparent; }
+::-webkit-scrollbar-thumb { background: var(--bg-fill); border-radius: 4px; border: 2px solid transparent; background-clip: content-box; }
+::-webkit-scrollbar-thumb:hover { background: var(--border); background-clip: content-box; border: 2px solid transparent; }
 
 /* Selection */
-::selection { background: rgba(245,197,24,0.25); color: #ffffff; }
+::selection { background: var(--accent-dim); color: var(--text-primary); }
 
-/* React Flow overrides — Apple dark */
-.react-flow__background { background: #000000 !important; }
-.react-flow__minimap { background: #1c1c1e !important; border: 1px solid rgba(84,84,88,0.6); border-radius: 12px; overflow: hidden; }
-.react-flow__controls { background: #1c1c1e !important; border: 1px solid rgba(84,84,88,0.6) !important; border-radius: 12px !important; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.4); }
-.react-flow__controls-button { background: #1c1c1e !important; border-color: rgba(84,84,88,0.6) !important; color: rgba(235,235,245,0.6) !important; }
-.react-flow__controls-button:hover { background: #2c2c2e !important; color: #ffffff !important; }
-.react-flow__edge-path { opacity: 0.35; }
+/* React Flow overrides — theme-aware */
+.react-flow__background { background: var(--bg) !important; }
+.react-flow__minimap { background: var(--bg-elevated) !important; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.react-flow__controls { background: var(--bg-elevated) !important; border: 1px solid var(--border) !important; border-radius: var(--radius) !important; overflow: hidden; box-shadow: var(--shadow-sm); }
+.react-flow__controls-button { background: var(--bg-elevated) !important; border-color: var(--border) !important; color: var(--text-secondary) !important; }
+.react-flow__controls-button:hover { background: var(--bg-grouped) !important; color: var(--text-primary) !important; }
+.react-flow__edge-path { opacity: 0.85; stroke-width: 2; }
 
-/* Apple card style */
+/* Theme-specific edge overrides */
+[data-theme="light"] .react-flow__edge-path { opacity: 0.75; }
+[data-theme="glass"] .react-flow__edge-path { opacity: 0.90; }
+[data-theme="color"] .react-flow__edge-path { opacity: 0.90; }
+
+/* Apple card style — theme-aware */
 .apple-card {
-  background: #1c1c1e;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06);
-  border: 1px solid rgba(84,84,88,0.3);
+  background: var(--bg-elevated);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm), var(--inset-shine);
+  border: 1px solid var(--sidebar-border);
 }
 
 /* Animations */
