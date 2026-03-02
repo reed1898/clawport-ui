@@ -3,9 +3,9 @@
  *
  * The gateway's /v1/chat/completions endpoint strips image_url content parts.
  * Images work through the WebSocket agent pipeline (chat.send), which is the
- * same path Discord/Telegram/etc use. We call it via `openclaw gateway call`.
+ * same path Discord/Telegram/etc use. We connect directly via WebSocket.
  *
- * Flow: extract images as attachments → chat.send → poll chat.history → return
+ * Flow: extract images as attachments → WS chat.send → wait for response → return
  */
 
 import type { ApiMessage, ContentPart } from './validation'
@@ -78,85 +78,142 @@ export function buildTextPrompt(systemPrompt: string, messages: ApiMessage[]): s
 }
 
 /**
- * Send a vision message through the OpenClaw gateway's chat.send pipeline.
- * This is the same path Discord/Telegram use — supports image attachments.
+ * Send a vision message through the OpenClaw gateway via WebSocket.
+ * Connects to the gateway, sends chat.send with image attachments,
+ * and waits for the agent's response.
  *
  * Returns the assistant's response text, or null on failure.
  */
 export async function sendViaOpenClaw(opts: {
-  openclawBin: string
+  gatewayUrl?: string
   gatewayToken: string
   message: string
   attachments: OpenClawAttachment[]
   sessionKey?: string
   timeoutMs?: number
 }): Promise<string | null> {
-  const { execFile } = await import('child_process')
-  const { promisify } = await import('util')
-  const execFileAsync = promisify(execFile)
-
+  const wsUrl = opts.gatewayUrl || 'ws://127.0.0.1:18789'
   const sessionKey = opts.sessionKey || 'agent:main:manor-ui'
   const idempotencyKey = `manor-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
   const timeoutMs = opts.timeoutMs || 60000
 
-  const params = JSON.stringify({
-    sessionKey,
-    idempotencyKey,
-    message: opts.message,
-    attachments: opts.attachments,
-  })
+  return new Promise<string | null>((resolve) => {
+    const timer = setTimeout(() => {
+      try { ws.close() } catch { /* ignore */ }
+      resolve(null)
+    }, timeoutMs)
 
-  try {
-    // Send the message with image attachments
-    await execFileAsync(opts.openclawBin, [
-      'gateway', 'call', 'chat.send',
-      '--params', params,
-      '--token', opts.gatewayToken,
-      '--json',
-    ], { timeout: timeoutMs })
+    const ws = new WebSocket(wsUrl)
 
-    // Poll chat.history for the response
-    const pollStart = Date.now()
-    const pollInterval = 1000
-    const maxPollTime = timeoutMs
+    ws.onopen = () => {
+      // Authenticate
+      ws.send(JSON.stringify({
+        type: 'auth',
+        token: opts.gatewayToken,
+      }))
+    }
 
-    while (Date.now() - pollStart < maxPollTime) {
-      await new Promise(resolve => setTimeout(resolve, pollInterval))
+    let authenticated = false
+    let sendAcked = false
 
+    ws.onmessage = (event: MessageEvent) => {
       try {
-        const historyResult = await execFileAsync(opts.openclawBin, [
-          'gateway', 'call', 'chat.history',
-          '--params', JSON.stringify({ sessionKey, limit: 3 }),
-          '--token', opts.gatewayToken,
-          '--json',
-        ], { timeout: 10000 })
+        const data = JSON.parse(typeof event.data === 'string' ? event.data : event.data.toString())
 
-        const historyData = JSON.parse(historyResult.stdout)
+        // Handle auth response
+        if (!authenticated && (data.type === 'auth_ok' || data.type === 'welcome' || data.authenticated)) {
+          authenticated = true
+          // Send the chat.send request
+          ws.send(JSON.stringify({
+            type: 'call',
+            method: 'chat.send',
+            params: {
+              sessionKey,
+              idempotencyKey,
+              message: opts.message,
+              attachments: opts.attachments,
+            },
+          }))
+          return
+        }
 
-        // Look for the assistant's reply to our message
-        if (historyData?.result?.messages) {
-          const msgs = historyData.result.messages
-          // Find the most recent assistant message
-          for (let i = msgs.length - 1; i >= 0; i--) {
-            if (msgs[i].role === 'assistant' && msgs[i].content) {
-              return msgs[i].content
-            }
+        // Handle chat.send ack
+        if (data.method === 'chat.send' || data.type === 'result') {
+          sendAcked = true
+          // Now wait for the agent response via chat events
+          return
+        }
+
+        // Handle agent response — look for assistant message in chat events
+        if (sendAcked) {
+          // The gateway emits chat events as the agent responds
+          const content = extractResponseContent(data)
+          if (content) {
+            clearTimeout(timer)
+            try { ws.close() } catch { /* ignore */ }
+            resolve(content)
+            return
           }
         }
-        // Also check if the result itself is the response
-        if (historyData?.result?.content) {
-          return historyData.result.content
-        }
       } catch {
-        // Poll failed, try again
+        // Skip unparseable messages
       }
     }
 
-    return null
-  } catch (err) {
-    console.error('OpenClaw chat.send error:', err)
-    return null
+    ws.onerror = () => {
+      clearTimeout(timer)
+      resolve(null)
+    }
+
+    ws.onclose = () => {
+      clearTimeout(timer)
+      // If we haven't resolved yet, resolve with null
+      resolve(null)
+    }
+  })
+}
+
+/**
+ * Try to extract the assistant's response content from a gateway WebSocket message.
+ * The gateway can emit responses in several formats depending on the event type.
+ */
+function extractResponseContent(data: Record<string, unknown>): string | null {
+  // Direct content field
+  if (typeof data.content === 'string' && data.content && data.role === 'assistant') {
+    return data.content
   }
+
+  // Nested in result
+  if (data.result && typeof data.result === 'object') {
+    const result = data.result as Record<string, unknown>
+    if (typeof result.content === 'string' && result.content) {
+      return result.content
+    }
+    // Message wrapper
+    if (result.message && typeof result.message === 'object') {
+      const msg = result.message as Record<string, unknown>
+      if (typeof msg.content === 'string' && msg.content) {
+        return msg.content
+      }
+    }
+  }
+
+  // Chat event with message
+  if (data.type === 'chat' && data.message && typeof data.message === 'object') {
+    const msg = data.message as Record<string, unknown>
+    if (msg.role === 'assistant' && typeof msg.content === 'string' && msg.content) {
+      return msg.content
+    }
+  }
+
+  // Agent turn complete
+  if (data.type === 'agent_turn_complete' || data.type === 'turn_complete') {
+    if (typeof data.reply === 'string' && data.reply) return data.reply
+    if (typeof data.text === 'string' && data.text) return data.text
+    if (typeof data.content === 'string' && data.content) return data.content
+  }
+
+  return null
 }
 
 function parseDataUrl(url: string): { mediaType: string; data: string } {

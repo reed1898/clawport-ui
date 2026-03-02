@@ -11,7 +11,6 @@ const openai = new OpenAI({
   apiKey: process.env.OPENCLAW_GATEWAY_TOKEN,
 })
 
-const OPENCLAW_BIN = process.env.OPENCLAW_BIN || 'openclaw'
 const GATEWAY_TOKEN = process.env.OPENCLAW_GATEWAY_TOKEN || ''
 
 export async function POST(
@@ -59,7 +58,6 @@ export async function POST(
     const textPrompt = buildTextPrompt(systemPrompt, messages)
 
     const response = await sendViaOpenClaw({
-      openclawBin: OPENCLAW_BIN,
       gatewayToken: GATEWAY_TOKEN,
       message: textPrompt,
       attachments,
