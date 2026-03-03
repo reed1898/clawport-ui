@@ -1,5 +1,7 @@
 'use client'
 
+import { RotateCcw } from 'lucide-react'
+
 interface ErrorStateProps {
   message: string
   onRetry?: () => void
@@ -62,6 +64,7 @@ export function ErrorState({ message, onRetry }: ErrorStateProps) {
         {onRetry && (
           <button
             onClick={onRetry}
+            className="focus-ring btn-scale"
             style={{
               height: 40,
               padding: '0 20px',
@@ -73,6 +76,9 @@ export function ErrorState({ message, onRetry }: ErrorStateProps) {
               border: 'none',
               cursor: 'pointer',
               transition: 'all 150ms var(--ease-spring)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = 'var(--fill-primary)';
@@ -81,6 +87,7 @@ export function ErrorState({ message, onRetry }: ErrorStateProps) {
               e.currentTarget.style.background = 'var(--fill-secondary)';
             }}
           >
+            <RotateCcw size={16} />
             Try Again
           </button>
         )}

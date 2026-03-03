@@ -799,7 +799,7 @@ export function ConversationView({ agent, conversation, onUpdate, onBack }: Conv
                       padding: 'var(--space-3) var(--space-4)',
                       borderRadius: 'var(--radius-lg) var(--radius-lg) var(--radius-sm) var(--radius-lg)',
                       background: 'var(--accent)',
-                      color: '#000',
+                      color: 'var(--accent-contrast)',
                       fontSize: 'var(--text-subheadline)',
                       lineHeight: 'var(--leading-relaxed)',
                       fontWeight: 'var(--weight-medium)',

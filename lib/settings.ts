@@ -70,3 +70,16 @@ export function hexToAccentFill(hex: string): string {
   const b = parseInt(hex.slice(5, 7), 16)
   return `rgba(${r},${g},${b},0.15)`
 }
+
+/** Return '#fff' or '#000' depending on which has better contrast against the given hex color */
+export function hexToContrastText(hex: string): string {
+  const r = parseInt(hex.slice(1, 3), 16) / 255
+  const g = parseInt(hex.slice(3, 5), 16) / 255
+  const b = parseInt(hex.slice(5, 7), 16) / 255
+  // sRGB luminance (WCAG 2.0)
+  const lum =
+    0.2126 * (r <= 0.03928 ? r / 12.92 : ((r + 0.055) / 1.055) ** 2.4) +
+    0.7152 * (g <= 0.03928 ? g / 12.92 : ((g + 0.055) / 1.055) ** 2.4) +
+    0.0722 * (b <= 0.03928 ? b / 12.92 : ((b + 0.055) / 1.055) ** 2.4)
+  return lum > 0.4 ? '#000' : '#fff'
+}

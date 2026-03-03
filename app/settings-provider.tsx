@@ -9,6 +9,7 @@ import {
   loadSettings,
   saveSettings,
   hexToAccentFill,
+  hexToContrastText,
 } from '@/lib/settings'
 
 interface AgentDisplay {
@@ -64,9 +65,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     if (settings.accentColor) {
       el.setProperty('--accent', settings.accentColor)
       el.setProperty('--accent-fill', hexToAccentFill(settings.accentColor))
+      el.setProperty('--accent-contrast', hexToContrastText(settings.accentColor))
     } else {
       el.removeProperty('--accent')
       el.removeProperty('--accent-fill')
+      el.removeProperty('--accent-contrast')
     }
   }, [settings.accentColor])
 

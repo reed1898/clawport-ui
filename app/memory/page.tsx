@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { MemoryFile } from "@/lib/types";
+import { RefreshCw, Copy, Check, Download } from "lucide-react";
 import { renderMarkdown, colorizeJson } from "@/lib/sanitize";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ErrorState";
@@ -378,22 +379,7 @@ export default function MemoryPage() {
               padding: 0,
             }}
           >
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 16 16"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              style={{ color: "var(--text-tertiary)" }}
-            >
-              <path d="M1.5 8a6.5 6.5 0 0 1 11.48-4.17" />
-              <path d="M14.5 8a6.5 6.5 0 0 1-11.48 4.17" />
-              <polyline points="1.5 1.5 1.5 4 4 4" />
-              <polyline points="14.5 14.5 14.5 12 12 12" />
-            </svg>
+            <RefreshCw size={14} style={{ color: "var(--text-tertiary)" }} />
           </button>
         </div>
 
@@ -623,8 +609,12 @@ export default function MemoryPage() {
                       borderRadius: "var(--radius-sm)",
                       fontSize: "var(--text-caption1)",
                       fontWeight: "var(--weight-medium)",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
                     }}
                   >
+                    {copied ? <Check size={14} /> : <Copy size={14} />}
                     {copied ? "Copied" : "Copy"}
                   </button>
                   <button
@@ -636,8 +626,12 @@ export default function MemoryPage() {
                       borderRadius: "var(--radius-sm)",
                       fontSize: "var(--text-caption1)",
                       fontWeight: "var(--weight-medium)",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
                     }}
                   >
+                    <Download size={14} />
                     Download
                   </button>
                 </div>

@@ -82,6 +82,7 @@
   --text-quaternary: rgba(235,235,245,0.18);
   --accent: #F5C518;
   --accent-fill: rgba(245,197,24,0.15);
+  --accent-contrast: #000;
   --system-blue: #0A84FF;
   --system-green: #30D158;
   --system-red: #FF453A;
@@ -129,6 +130,7 @@
   --text-quaternary: rgba(255,255,255,0.18);
   --accent: #F5C518;
   --accent-fill: rgba(245,197,24,0.18);
+  --accent-contrast: #000;
   --system-blue: #3B9EFF;
   --system-green: #34D058;
   --system-red: #FF5C57;
@@ -176,6 +178,7 @@
   --text-quaternary: rgba(220,210,255,0.20);
   --accent: #F5C518;
   --accent-fill: rgba(245,197,24,0.20);
+  --accent-contrast: #000;
   --system-blue: #60A5FA;
   --system-green: #34D399;
   --system-red: #F87171;
@@ -223,6 +226,7 @@
   --text-quaternary: rgba(60,60,67,0.30);
   --accent: #B8860B;
   --accent-fill: rgba(184,134,11,0.12);
+  --accent-contrast: #fff;
   --system-blue: #007AFF;
   --system-green: #28CD41;
   --system-red: #FF3B30;
@@ -271,6 +275,7 @@
     --text-quaternary: rgba(60,60,67,0.30);
     --accent: #B8860B;
     --accent-fill: rgba(184,134,11,0.12);
+    --accent-contrast: #fff;
     --system-blue: #007AFF;
     --system-green: #28CD41;
     --system-red: #FF3B30;
@@ -479,7 +484,7 @@ body {
 /* Primary CTA — gold glow */
 .btn-primary {
   background: var(--accent);
-  color: #000;
+  color: var(--accent-contrast);
   font-weight: var(--weight-semibold);
   border: none;
   cursor: pointer;
@@ -580,7 +585,7 @@ body {
 
 .apple-btn-primary {
   background: var(--accent);
-  color: #000;
+  color: var(--accent-contrast);
   border: none;
   border-radius: var(--radius-md);
   padding: 14px 20px;
@@ -658,8 +663,8 @@ body {
 }
 
 /* User bubble code blocks need inverted colors in light theme */
-.msg-user pre { background: rgba(0,0,0,0.15) !important; color: #000 !important; }
-.msg-user code { background: rgba(0,0,0,0.12) !important; color: #000 !important; }
+.msg-user pre { background: rgba(0,0,0,0.15) !important; color: var(--accent-contrast) !important; }
+.msg-user code { background: rgba(0,0,0,0.12) !important; color: var(--accent-contrast) !important; }
 
 /* ============================================
    Chat — Typing Dots

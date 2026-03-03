@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { Agent, CronJob, CronRun } from "@/lib/types";
 import { formatDuration } from "@/lib/cron-utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { RefreshCw, BarChart3, Calendar, GitBranch, Copy, Check } from "lucide-react";
 import { ErrorState } from "@/components/ErrorState";
 import { WeeklySchedule } from "@/components/crons/WeeklySchedule";
 import { PipelineGraph } from "@/components/crons/PipelineGraph";
@@ -65,6 +66,12 @@ const PILLS: { key: Filter; label: string; dotColor: string }[] = [
   { key: "error", label: "Errors", dotColor: "var(--system-red)" },
   { key: "idle", label: "Idle", dotColor: "var(--text-tertiary)" },
 ];
+
+const TAB_ICONS: Record<Tab, React.ComponentType<{ size: number; className?: string }>> = {
+  overview: BarChart3,
+  schedule: Calendar,
+  pipelines: GitBranch,
+};
 
 const TABS: { key: Tab; label: string }[] = [
   { key: "overview", label: "Overview" },
@@ -289,8 +296,9 @@ function ErrorsBanners({
                       onClick={() => onCopy(cron.id, cron.lastError!)}
                       className="btn-ghost focus-ring flex-shrink-0"
                       aria-label={`Copy error for ${cron.name}`}
-                      style={{ padding: "2px 8px", borderRadius: "var(--radius-sm)", fontSize: "var(--text-caption2)", fontWeight: "var(--weight-medium)" }}
+                      style={{ padding: "2px 8px", borderRadius: "var(--radius-sm)", fontSize: "var(--text-caption2)", fontWeight: "var(--weight-medium)", display: "inline-flex", alignItems: "center", gap: 3 }}
                     >
+                      {copiedId === cron.id ? <Check size={12} /> : <Copy size={12} />}
                       {copiedId === cron.id ? "Copied" : "Copy"}
                     </button>
                   )}
@@ -543,12 +551,7 @@ export default function CronsPage() {
               aria-label="Refresh cron data"
               style={{ width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "var(--radius-sm)", border: "none", background: "transparent", color: "var(--text-tertiary)", cursor: "pointer", transition: "color 150ms var(--ease-smooth)" }}
             >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={refreshing ? "animate-spin" : ""}>
-                <path d="M1.5 8a6.5 6.5 0 0 1 11.48-4.17" />
-                <path d="M14.5 8a6.5 6.5 0 0 1-11.48 4.17" />
-                <polyline points="1.5 1.5 1.5 4 4 4" />
-                <polyline points="14.5 14.5 14.5 12 12 12" />
-              </svg>
+              <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
             </button>
           </div>
         </div>
@@ -557,6 +560,7 @@ export default function CronsPage() {
         <div className="flex items-center" style={{ padding: "0 var(--space-6) var(--space-3)", gap: "var(--space-1)" }}>
           {TABS.map((t) => {
             const isActive = tab === t.key;
+            const TabIcon = TAB_ICONS[t.key];
             return (
               <button
                 key={t.key}
@@ -572,8 +576,12 @@ export default function CronsPage() {
                   transition: "all 200ms var(--ease-smooth)",
                   background: isActive ? "var(--accent-fill)" : "transparent",
                   color: isActive ? "var(--accent)" : "var(--text-secondary)",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
                 }}
               >
+                <TabIcon size={14} />
                 {t.label}
               </button>
             );
@@ -805,8 +813,9 @@ export default function CronsPage() {
                                       onClick={(e) => { e.stopPropagation(); copyError(cron.id, cron.lastError!); }}
                                       className="btn-ghost focus-ring flex-shrink-0"
                                       aria-label="Copy error text"
-                                      style={{ padding: "4px 10px", borderRadius: "var(--radius-sm)", fontSize: "var(--text-caption2)", fontWeight: "var(--weight-medium)" }}
+                                      style={{ padding: "4px 10px", borderRadius: "var(--radius-sm)", fontSize: "var(--text-caption2)", fontWeight: "var(--weight-medium)", display: "inline-flex", alignItems: "center", gap: 3 }}
                                     >
+                                      {copiedId === cron.id ? <Check size={12} /> : <Copy size={12} />}
                                       {copiedId === cron.id ? "Copied" : "Copy"}
                                     </button>
                                   </div>

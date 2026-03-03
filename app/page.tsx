@@ -5,6 +5,7 @@ import Link from "next/link"
 import dynamic from "next/dynamic"
 import type { Agent, CronJob } from "@/lib/types"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Map as MapIcon, LayoutGrid, List, X, MessageSquare, User } from "lucide-react"
 import { ErrorState } from "@/components/ErrorState"
 import { AgentAvatar } from "@/components/AgentAvatar"
 import { GridView } from "@/components/GridView"
@@ -98,6 +99,12 @@ function MapSkeleton() {
 }
 
 type View = "map" | "grid" | "feed"
+
+const VIEW_ICONS: Record<View, React.ComponentType<{ size: number }>> = {
+  map: MapIcon,
+  grid: LayoutGrid,
+  feed: List,
+}
 
 const VIEW_OPTIONS: { key: View; label: string }[] = [
   { key: "map", label: "Map" },
@@ -227,6 +234,7 @@ export default function ManorPage() {
         >
           {VIEW_OPTIONS.map((opt) => {
             const isActive = view === opt.key
+            const ViewIcon = VIEW_ICONS[opt.key]
             return (
               <button
                 key={opt.key}
@@ -242,6 +250,9 @@ export default function ManorPage() {
                   border: "none",
                   cursor: "pointer",
                   transition: "all 200ms var(--ease-smooth)",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
                   ...(isActive
                     ? {
                         background: "var(--accent-fill)",
@@ -254,6 +265,7 @@ export default function ManorPage() {
                       }),
                 }}
               >
+                <ViewIcon size={14} />
                 {opt.label}
               </button>
             )
@@ -383,12 +395,10 @@ export default function ManorPage() {
                   color: "var(--text-secondary)",
                   border: "none",
                   cursor: "pointer",
-                  fontSize: 13,
-                  fontWeight: "var(--weight-semibold)",
                   transition: "all 150ms var(--ease-spring)",
                 }}
               >
-                &#x2715;
+                <X size={14} />
               </button>
             </div>
 
@@ -465,7 +475,7 @@ export default function ManorPage() {
               >
                 <button
                   onClick={() => router.push(`/chat/${selected.id}`)}
-                  className="focus-ring"
+                  className="focus-ring btn-scale"
                   aria-label={`Open chat with ${selected.name}`}
                   style={{
                     flex: 1,
@@ -476,7 +486,7 @@ export default function ManorPage() {
                     padding: "var(--space-2) var(--space-3)",
                     borderRadius: "var(--radius-md)",
                     background: "var(--accent)",
-                    color: "#000",
+                    color: "var(--accent-contrast)",
                     border: "none",
                     cursor: "pointer",
                     fontSize: "var(--text-subheadline)",
@@ -484,11 +494,12 @@ export default function ManorPage() {
                     transition: "all 150ms var(--ease-spring)",
                   }}
                 >
+                  <MessageSquare size={16} />
                   Message
                 </button>
                 <Link
                   href={`/agents/${selected.id}`}
-                  className="focus-ring"
+                  className="focus-ring btn-scale"
                   aria-label={`View full profile of ${selected.name}`}
                   style={{
                     flex: 1,
@@ -508,6 +519,7 @@ export default function ManorPage() {
                     transition: "all 150ms var(--ease-spring)",
                   }}
                 >
+                  <User size={16} />
                   Profile
                 </Link>
               </div>

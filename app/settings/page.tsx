@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { ChevronRight, RotateCcw, Upload, X } from 'lucide-react'
+import { ChevronRight, RotateCcw, Trash2, Upload, X } from 'lucide-react'
 import type { Agent } from '@/lib/types'
 import { useSettings } from '@/app/settings-provider'
 import { AgentAvatar } from '@/components/AgentAvatar'
@@ -238,8 +238,12 @@ export default function SettingsPage() {
                     border: 'none',
                     cursor: 'pointer',
                     padding: 0,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
                   }}
                 >
+                  <RotateCcw size={12} />
                   Reset to Default
                 </button>
               )}
@@ -841,18 +845,23 @@ export default function SettingsPage() {
           >
             <button
               onClick={() => setWizardOpen(true)}
+              className="btn-scale"
               style={{
                 padding: 'var(--space-2) var(--space-6)',
                 borderRadius: 'var(--radius-md)',
                 background: 'var(--accent)',
-                color: '#000',
+                color: 'var(--accent-contrast)',
                 border: 'none',
                 cursor: 'pointer',
                 fontSize: 'var(--text-body)',
                 fontWeight: 'var(--weight-semibold)',
                 transition: 'all 150ms var(--ease-spring)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 'var(--space-2)',
               }}
             >
+              <RotateCcw size={16} />
               Re-run Setup
             </button>
             <button
@@ -861,6 +870,7 @@ export default function SettingsPage() {
                   resetAll()
                 }
               }}
+              className="btn-scale"
               style={{
                 padding: 'var(--space-2) var(--space-6)',
                 borderRadius: 'var(--radius-md)',
@@ -871,8 +881,12 @@ export default function SettingsPage() {
                 fontSize: 'var(--text-body)',
                 fontWeight: 'var(--weight-semibold)',
                 transition: 'all 150ms var(--ease-spring)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 'var(--space-2)',
               }}
             >
+              <Trash2 size={16} />
               Reset All Settings
             </button>
           </div>

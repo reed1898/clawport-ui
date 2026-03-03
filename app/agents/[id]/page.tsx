@@ -337,7 +337,7 @@ export default function AgentDetailPage({
             aria-label={`Open chat with ${agent.name}`}
             style={{
               background: "var(--accent)",
-              color: "#000",
+              color: "var(--accent-contrast)",
               border: "none",
               borderRadius: "var(--radius-md)",
               padding: "var(--space-2) var(--space-5)",

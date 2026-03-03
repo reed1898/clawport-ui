@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { Map, MessageSquare, Columns3, Clock, Brain, Mic, Check, Keyboard, AlertCircle, Loader2, CheckCircle2, XCircle } from 'lucide-react'
+import { Map, MessageSquare, Columns3, Clock, Brain, Mic, Check, Keyboard, AlertCircle, Loader2, CheckCircle2, XCircle, ArrowLeft, ArrowRight, Rocket, RotateCcw } from 'lucide-react'
 import { useSettings } from '@/app/settings-provider'
 import { useTheme } from '@/app/providers'
 import { THEMES } from '@/lib/themes'
@@ -528,8 +528,12 @@ export function OnboardingWizard({ forceOpen, onClose }: OnboardingWizardProps) 
                     cursor: 'pointer',
                     fontSize: 'var(--text-caption1)',
                     fontWeight: 'var(--weight-medium)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
                   }}
                 >
+                  <RotateCcw size={16} />
                   Retry Checks
                 </button>
               )}
@@ -1024,8 +1028,12 @@ export function OnboardingWizard({ forceOpen, onClose }: OnboardingWizardProps) 
                 fontSize: 'var(--text-subheadline)',
                 fontWeight: 'var(--weight-medium)',
                 transition: 'all 150ms var(--ease-smooth)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
               }}
             >
+              <ArrowLeft size={16} />
               Back
             </button>
           ) : (
@@ -1038,15 +1046,19 @@ export function OnboardingWizard({ forceOpen, onClose }: OnboardingWizardProps) 
               padding: 'var(--space-2) var(--space-6)',
               borderRadius: 'var(--radius-md)',
               background: step === 1 && systemLoading ? 'var(--fill-tertiary)' : 'var(--accent)',
-              color: step === 1 && systemLoading ? 'var(--text-quaternary)' : '#000',
+              color: step === 1 && systemLoading ? 'var(--text-quaternary)' : 'var(--accent-contrast)',
               border: 'none',
               cursor: step === 1 && systemLoading ? 'wait' : 'pointer',
               fontSize: 'var(--text-subheadline)',
               fontWeight: 'var(--weight-semibold)',
               transition: 'all 150ms var(--ease-smooth)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
             }}
           >
             {step === 0 ? 'Begin' : step === TOTAL_STEPS - 1 ? 'Get Started' : 'Next'}
+            {step === TOTAL_STEPS - 1 ? <Rocket size={16} /> : <ArrowRight size={16} />}
           </button>
         </div>
       </div>

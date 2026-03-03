@@ -13,6 +13,7 @@ import {
   type KanbanStore,
 } from '@/lib/kanban/store'
 import { useAgentWork } from '@/lib/kanban/useAgentWork'
+import { Plus } from 'lucide-react'
 import { KanbanBoard } from '@/components/kanban/KanbanBoard'
 import { CreateTicketModal } from '@/components/kanban/CreateTicketModal'
 import { TicketDetailPanel } from '@/components/kanban/TicketDetailPanel'
@@ -178,7 +179,7 @@ export default function KanbanPage() {
 
           <button
             onClick={() => setCreateOpen(true)}
-            className="btn-primary focus-ring"
+            className="btn-primary focus-ring btn-scale"
             style={{
               borderRadius: 'var(--radius-md)',
               padding: '8px 16px',
@@ -190,7 +191,8 @@ export default function KanbanPage() {
               gap: 'var(--space-2)',
             }}
           >
-            + New Ticket
+            <Plus size={16} />
+            New Ticket
           </button>
         </div>
 
