@@ -11,6 +11,7 @@ export interface Agent {
   voiceId: string | null   // ElevenLabs voice ID
   color: string            // hex color for node
   emoji: string            // emoji identifier
+  model: string | null     // LLM model identifier (e.g. "anthropic/claude-sonnet-4-6")
   tools: string[]          // list of tools this agent has access to
   crons: CronJob[]         // associated cron jobs
   memoryPath: string | null

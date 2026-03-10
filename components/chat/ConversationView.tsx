@@ -725,7 +725,7 @@ export function ConversationView({ agent, conversation, onUpdate, onBack }: Conv
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
             }}>
-              {agent.title}{messages.length > 1 && ' · Synced'}
+              {agent.title}{agent.model && ` · ${agent.model.split('/').pop()}`}{messages.length > 1 && ' · Synced'}
             </div>
           </div>
         </div>
