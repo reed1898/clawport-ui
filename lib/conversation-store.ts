@@ -29,8 +29,13 @@ export function validateAgentId(id: string): void {
 function getConversationsDir(gatewayId?: string | null): string {
   const workspacePath = resolveWorkspacePath(gatewayId)
   if (!workspacePath) return '' // Should not happen if configured correctly
-  const gateway = getAgentGateway(gatewayId)
-  return path.resolve(workspacePath, '..', 'conversations', gateway.id)
+  const base = path.resolve(workspacePath, '..', 'conversations')
+  // Only namespace when an explicit non-default gatewayId is given
+  if (gatewayId && gatewayId !== 'default') {
+    const gateway = getAgentGateway(gatewayId)
+    return path.join(base, gateway.id)
+  }
+  return base
 }
 
 /** Derive the clawport config directory from WORKSPACE_PATH */
@@ -38,7 +43,9 @@ function getClawportDir(gatewayId?: string | null): string {
   const workspacePath = resolveWorkspacePath(gatewayId)
   if (!workspacePath) return '' // Should not happen
   const gateway = getAgentGateway(gatewayId)
-  return path.resolve(workspacePath, '..', 'clawport', gateway.id)
+  const base = path.resolve(workspacePath, '..', 'clawport')
+  // Only namespace when an explicit non-default gatewayId is given
+  return gatewayId && gatewayId !== 'default' ? path.join(base, gateway.id) : base
 }
 
 /**
