@@ -15,13 +15,16 @@ interface AgentListProps {
 
 export function AgentList({ agents, conversations, activeId, onSelect, loading }: AgentListProps) {
   const [search, setSearch] = useState('')
+  const [selectedGateway, setSelectedGateway] = useState('all')
 
-  const filtered = search.trim()
-    ? agents.filter(a => {
-        const q = search.toLowerCase()
-        return a.name.toLowerCase().includes(q) || a.title.toLowerCase().includes(q)
-      })
-    : agents
+  const gatewayOptions = Array.from(new Set(agents.map(a => a.gatewayId).filter(Boolean) as string[]))
+
+  const filtered = agents.filter(a => {
+    if (selectedGateway !== 'all' && a.gatewayId !== selectedGateway) return false
+    if (!search.trim()) return true
+    const q = search.toLowerCase()
+    return a.name.toLowerCase().includes(q) || a.title.toLowerCase().includes(q)
+  })
 
   const sorted = [...filtered].sort((a, b) => {
     const ca = conversations[a.id]
@@ -123,6 +126,31 @@ export function AgentList({ agents, conversations, activeId, onSelect, loading }
             </button>
           )}
         </div>
+
+        {gatewayOptions.length > 1 && (
+          <select
+            value={selectedGateway}
+            onChange={(e) => setSelectedGateway(e.target.value)}
+            aria-label="Gateway filter"
+            className="focus-ring"
+            style={{
+              marginTop: 'var(--space-2)',
+              width: '100%',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--separator)',
+              background: 'var(--bg)',
+              color: 'var(--text-secondary)',
+              fontSize: 'var(--text-caption1)',
+              padding: '6px var(--space-2)',
+            }}
+          >
+            <option value="all">All gateways</option>
+            {gatewayOptions.map((gatewayId) => {
+              const gatewayName = agents.find(a => a.gatewayId === gatewayId)?.gatewayName || gatewayId
+              return <option key={gatewayId} value={gatewayId}>{gatewayName}</option>
+            })}
+          </select>
+        )}
       </div>
 
       {/* Agent list */}
@@ -240,6 +268,15 @@ export function AgentList({ agents, conversations, activeId, onSelect, loading }
                       {timeLabel}
                     </span>
                   </div>
+                  {agent.gatewayName && (
+                    <div style={{
+                      fontSize: 'var(--text-caption2)',
+                      color: 'var(--text-quaternary)',
+                      marginBottom: 2,
+                    }}>
+                      {agent.gatewayName}
+                    </div>
+                  )}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{
                       fontSize: 'var(--text-caption1)',

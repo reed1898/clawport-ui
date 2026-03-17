@@ -589,7 +589,7 @@ export function ConversationView({ agent, conversation, onUpdate, onBack }: Conv
       const res = await fetch('/api/tts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text, gatewayId: agent.gatewayId }),
       })
       if (!res.ok) throw new Error('TTS request failed')
 
@@ -616,7 +616,7 @@ export function ConversationView({ agent, conversation, onUpdate, onBack }: Conv
     } catch {
       stopTts()
     }
-  }, [ttsPlayingId, stopTts])
+  }, [agent.gatewayId, ttsPlayingId, stopTts])
 
   const speakerPlayIcon = useMemo(() => (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

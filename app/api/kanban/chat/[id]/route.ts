@@ -2,12 +2,7 @@ export const runtime = 'nodejs'
 
 import { getAgent } from '@/lib/agents'
 import OpenAI from 'openai'
-import { gatewayBaseUrl } from '@/lib/env'
-
-const openai = new OpenAI({
-  baseURL: gatewayBaseUrl(),
-  apiKey: process.env.OPENCLAW_GATEWAY_TOKEN,
-})
+import { resolveGatewayProfile } from '@/lib/gateways'
 
 const MAX_TITLE = 500
 const MAX_DESC = 5000
@@ -36,6 +31,9 @@ export async function POST(
       headers: { 'Content-Type': 'application/json' },
     })
   }
+
+  const gateway = resolveGatewayProfile(agent.gatewayId)
+  const openai = new OpenAI({ baseURL: gateway.baseUrl, apiKey: gateway.token })
 
   let body: { messages?: unknown; ticket?: unknown }
   try {

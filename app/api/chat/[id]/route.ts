@@ -4,15 +4,7 @@ import { getAgent } from '@/lib/agents'
 import { validateChatMessages } from '@/lib/validation'
 import { hasImageContent, extractImageAttachments, buildTextPrompt, sendViaOpenClaw } from '@/lib/anthropic'
 import OpenAI from 'openai'
-import { gatewayBaseUrl } from '@/lib/env'
-
-// Route through the OpenClaw gateway — no separate API key needed
-const openai = new OpenAI({
-  baseURL: gatewayBaseUrl(),
-  apiKey: process.env.OPENCLAW_GATEWAY_TOKEN,
-})
-
-const GATEWAY_TOKEN = process.env.OPENCLAW_GATEWAY_TOKEN || ''
+import { resolveGatewayProfile } from '@/lib/gateways'
 
 export async function POST(
   request: Request,
@@ -27,6 +19,12 @@ export async function POST(
       headers: { 'Content-Type': 'application/json' },
     })
   }
+
+  const gateway = resolveGatewayProfile(agent.gatewayId)
+  const openai = new OpenAI({
+    baseURL: gateway.baseUrl,
+    apiKey: gateway.token,
+  })
 
   let body: unknown
   try {
@@ -61,12 +59,12 @@ export async function POST(
   const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')
   const latestHasImages = lastUserMsg ? hasImageContent([lastUserMsg]) : false
 
-  if (latestHasImages && GATEWAY_TOKEN) {
+  if (latestHasImages && gateway.token) {
     const attachments = extractImageAttachments([lastUserMsg!])
     const textPrompt = buildTextPrompt(systemPrompt, messages)
 
     const response = await sendViaOpenClaw({
-      gatewayToken: GATEWAY_TOKEN,
+      gatewayToken: gateway.token,
       message: textPrompt,
       attachments,
     })

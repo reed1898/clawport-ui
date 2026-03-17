@@ -1,16 +1,11 @@
 export const runtime = 'nodejs'
 
 import OpenAI from 'openai'
-import { gatewayBaseUrl } from '@/lib/env'
-
-const openai = new OpenAI({
-  baseURL: gatewayBaseUrl(),
-  apiKey: process.env.OPENCLAW_GATEWAY_TOKEN,
-})
+import { resolveGatewayProfile } from '@/lib/gateways'
 
 export async function POST(request: Request) {
   try {
-    const { text, voice } = await request.json()
+    const { text, voice, gatewayId } = await request.json()
 
     if (!text || typeof text !== 'string') {
       return new Response(JSON.stringify({ error: 'Missing or invalid "text" field' }), {
@@ -18,6 +13,9 @@ export async function POST(request: Request) {
         headers: { 'Content-Type': 'application/json' },
       })
     }
+
+    const gateway = resolveGatewayProfile(typeof gatewayId === 'string' ? gatewayId : null)
+    const openai = new OpenAI({ baseURL: gateway.baseUrl, apiKey: gateway.token })
 
     const response = await openai.audio.speech.create({
       model: 'tts-1',

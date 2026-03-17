@@ -2,10 +2,11 @@
  * Transcribe audio via the server-side Whisper API.
  * Returns the transcript text, or null if transcription failed.
  */
-export async function transcribeViaApi(audioBlob: Blob): Promise<string | null> {
+export async function transcribeViaApi(audioBlob: Blob, gatewayId?: string): Promise<string | null> {
   try {
     const form = new FormData()
     form.append('audio', audioBlob, 'voice.webm')
+    if (gatewayId) form.append('gatewayId', gatewayId)
     const res = await fetch('/api/transcribe', { method: 'POST', body: form })
     if (!res.ok) return null
     const data = await res.json()
@@ -86,8 +87,8 @@ export async function transcribeViaBrowser(audioBlob: Blob): Promise<string | nu
  * 1. Try server-side Whisper API
  * 2. Return result or null
  */
-export async function transcribe(audioBlob: Blob): Promise<{ text: string | null; source: 'whisper' | 'failed' }> {
-  const whisperResult = await transcribeViaApi(audioBlob)
+export async function transcribe(audioBlob: Blob, gatewayId?: string): Promise<{ text: string | null; source: 'whisper' | 'failed' }> {
+  const whisperResult = await transcribeViaApi(audioBlob, gatewayId)
   if (whisperResult) return { text: whisperResult, source: 'whisper' }
 
   return { text: null, source: 'failed' }

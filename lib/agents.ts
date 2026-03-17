@@ -3,11 +3,12 @@ import { readFileSync, existsSync } from 'fs'
 import { loadRegistry } from '@/lib/agents-registry'
 
 export async function getAgents(): Promise<Agent[]> {
-  const workspacePath = process.env.WORKSPACE_PATH || ''
+  const fallbackWorkspacePath = process.env.WORKSPACE_PATH || ''
   const registry = loadRegistry()
 
   return registry.map((entry) => {
     let soul: string | null = null
+    const workspacePath = entry.workspacePath || fallbackWorkspacePath
     if (entry.soulPath && workspacePath) {
       try {
         const fullPath = workspacePath + '/' + entry.soulPath

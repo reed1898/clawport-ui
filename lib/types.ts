@@ -16,6 +16,9 @@ export interface Agent {
   crons: CronJob[]         // associated cron jobs
   memoryPath: string | null
   description: string      // one-liner description
+  gatewayId?: string       // owning gateway profile id
+  gatewayName?: string     // owning gateway display name
+  workspacePath?: string | null // workspace used for local file-backed ops
 }
 
 export interface CronDelivery {

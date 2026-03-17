@@ -3,6 +3,8 @@ import { execSync } from 'child_process'
 import { join, basename } from 'path'
 import bundledRegistry from '@/lib/agents.json'
 import type { Agent } from '@/lib/types'
+import { loadGatewayProfiles, type GatewayProfile } from '@/lib/gateways'
+import { composeScopedAgentId } from '@/lib/scoped-agent-id'
 
 /** Raw agent data from JSON (everything except runtime-loaded soul and crons) */
 export type AgentEntry = Omit<Agent, 'soul' | 'crons'>
@@ -529,6 +531,54 @@ function enrichModelsFromCli(
   }
 }
 
+function withGatewayContext(
+  agents: AgentEntry[],
+  gateway: GatewayProfile,
+  scopeIds: boolean,
+): AgentEntry[] {
+  const idMap = new Map<string, string>()
+  for (const agent of agents) {
+    idMap.set(
+      agent.id,
+      scopeIds ? composeScopedAgentId(gateway.id, agent.id) : agent.id,
+    )
+  }
+
+  return agents.map((agent) => {
+    const scopedId = idMap.get(agent.id) || agent.id
+    return {
+      ...agent,
+      id: scopedId,
+      reportsTo: agent.reportsTo ? (idMap.get(agent.reportsTo) || agent.reportsTo) : null,
+      directReports: agent.directReports.map(id => idMap.get(id) || id),
+      gatewayId: gateway.id,
+      gatewayName: gateway.name,
+      workspacePath: gateway.workspacePath,
+    }
+  })
+}
+
+function loadWorkspaceRegistry(workspacePath: string, openclawBin?: string): AgentEntry[] | null {
+  const userRegistryPath = join(workspacePath, 'clawport', 'agents.json')
+  if (existsSync(userRegistryPath)) {
+    try {
+      const raw = readFileSync(userRegistryPath, 'utf-8')
+      return JSON.parse(raw) as AgentEntry[]
+    } catch {
+      // Malformed user JSON -- fall through
+    }
+  }
+
+  const discovered = discoverAgents(workspacePath)
+  if (!discovered) return null
+
+  if (!openclawBin) return discovered
+
+  const cliAgents = listCliAgents(openclawBin)
+  if (cliAgents) enrichModelsFromCli(discovered, cliAgents, workspacePath)
+  return discovered
+}
+
 /**
  * Load the agent registry.
  *
@@ -542,44 +592,44 @@ function enrichModelsFromCli(
 export function loadRegistry(): AgentEntry[] {
   const workspacePath = process.env.WORKSPACE_PATH
   const openclawBin = process.env.OPENCLAW_BIN
+  const gateways = loadGatewayProfiles(workspacePath)
+
+  // Multi-gateway mode is enabled only when gateways.json defines >1 profile.
+  const multiGatewayMode = gateways.length > 1
+  if (multiGatewayMode) {
+    const all: AgentEntry[] = []
+    for (const gateway of gateways) {
+      if (!gateway.workspacePath) continue
+      const registry = loadWorkspaceRegistry(gateway.workspacePath, openclawBin)
+      if (!registry) continue
+      all.push(...withGatewayContext(registry, gateway, true))
+    }
+    if (all.length > 0) return all
+  }
 
   if (workspacePath) {
-    // 1. User-provided override
-    const userRegistryPath = join(workspacePath, 'clawport', 'agents.json')
-    if (existsSync(userRegistryPath)) {
-      try {
-        const raw = readFileSync(userRegistryPath, 'utf-8')
-        return JSON.parse(raw) as AgentEntry[]
-      } catch {
-        // Malformed user JSON -- fall through
-      }
-    }
+    const registry = loadWorkspaceRegistry(workspacePath, openclawBin)
+    if (registry) {
+      const scoped = withGatewayContext(registry, gateways[0], false)
 
-    // 2. Auto-discover from primary workspace filesystem
-    const discovered = discoverAgents(workspacePath)
-
-    // 2b. Enrich with CLI model data + merge other workspaces
-    if (discovered && openclawBin) {
-      const cliAgents = listCliAgents(openclawBin)
-      if (cliAgents) {
-        enrichModelsFromCli(discovered, cliAgents, workspacePath)
-        if (cliAgents.length > 1) {
-          return mergeExtraWorkspaces(discovered, cliAgents, workspacePath)
+      // Keep legacy CLI merge behavior in single-gateway mode.
+      if (openclawBin) {
+        const cliAgents = listCliAgents(openclawBin)
+        if (cliAgents && cliAgents.length > 1) {
+          const merged = mergeExtraWorkspaces(registry, cliAgents, workspacePath)
+          return withGatewayContext(merged, gateways[0], false)
         }
       }
-      return discovered
+      return scoped
     }
-    if (discovered) return discovered
 
-    // 3. CLI-only: no primary workspace agents, scan each CLI agent's workspace
     if (openclawBin) {
       const cliAgents = listCliAgents(openclawBin)
       if (cliAgents) {
-        return mergeExtraWorkspaces([], cliAgents, '')
+        return withGatewayContext(mergeExtraWorkspaces([], cliAgents, ''), gateways[0], false)
       }
     }
   }
 
-  // 4. Bundled fallback
-  return bundledRegistry as AgentEntry[]
+  return withGatewayContext(bundledRegistry as AgentEntry[], gateways[0], false)
 }

@@ -1,12 +1,7 @@
 export const runtime = 'nodejs'
 
 import OpenAI from 'openai'
-import { gatewayBaseUrl } from '@/lib/env'
-
-const openai = new OpenAI({
-  baseURL: gatewayBaseUrl(),
-  apiKey: process.env.OPENCLAW_GATEWAY_TOKEN,
-})
+import { resolveGatewayProfile } from '@/lib/gateways'
 
 export async function POST(request: Request) {
   let formData: FormData
@@ -20,6 +15,10 @@ export async function POST(request: Request) {
   if (!audioFile || !(audioFile instanceof File)) {
     return Response.json({ error: 'Missing audio file' }, { status: 400 })
   }
+
+  const gatewayId = formData.get('gatewayId')
+  const gateway = resolveGatewayProfile(typeof gatewayId === 'string' ? gatewayId : null)
+  const openai = new OpenAI({ baseURL: gateway.baseUrl, apiKey: gateway.token })
 
   try {
     const transcription = await openai.audio.transcriptions.create({
