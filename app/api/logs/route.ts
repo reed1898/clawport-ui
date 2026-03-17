@@ -8,7 +8,8 @@ export async function GET(request: NextRequest) {
     const limitParam = request.nextUrl.searchParams.get('limit')
     const limit = limitParam ? parseInt(limitParam, 10) : undefined
 
-    const entries = getLogEntries({ source, limit })
+    const gatewayId = request.nextUrl.searchParams.get('gatewayId') ?? undefined
+    const entries = getLogEntries({ source, limit, gatewayId })
     const summary = computeLogSummary(entries)
 
     return NextResponse.json({ entries, summary })

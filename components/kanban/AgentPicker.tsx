@@ -292,7 +292,7 @@ export function AgentPicker({ agents, value, onChange }: AgentPickerProps) {
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
                     }}>
-                      {agent.title}
+                      {agent.title}{agent.gatewayName ? ` · 🌐 ${agent.gatewayName}` : ''}
                     </div>
                   </div>
                   {isSelected && (

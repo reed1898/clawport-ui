@@ -2,7 +2,7 @@ export const runtime = 'nodejs'
 
 import { getAgent } from '@/lib/agents'
 import { validateChatMessages } from '@/lib/validation'
-import { hasImageContent, extractImageAttachments, buildTextPrompt, sendViaOpenClaw } from '@/lib/anthropic'
+import { hasImageContent, extractImageAttachments, buildTextPrompt, sendViaOpenClaw, sendViaOpenClawHttp } from '@/lib/anthropic'
 import OpenAI from 'openai'
 import { resolveGatewayProfile } from '@/lib/gateways'
 
@@ -63,11 +63,20 @@ export async function POST(
     const attachments = extractImageAttachments([lastUserMsg!])
     const textPrompt = buildTextPrompt(systemPrompt, messages)
 
-    const response = await sendViaOpenClaw({
-      gatewayToken: gateway.token,
-      message: textPrompt,
-      attachments,
-    })
+    // Use HTTP for remote gateways, CLI for local/default
+    const isRemoteGateway = gateway.baseUrl && !gateway.baseUrl.includes('localhost') && !gateway.baseUrl.includes('127.0.0.1')
+    const response = isRemoteGateway
+      ? await sendViaOpenClawHttp({
+          gatewayBaseUrl: gateway.baseUrl,
+          gatewayToken: gateway.token,
+          message: textPrompt,
+          attachments,
+        })
+      : await sendViaOpenClaw({
+          gatewayToken: gateway.token,
+          message: textPrompt,
+          attachments,
+        })
 
     // Return as a non-streaming SSE response (complete text at once)
     const encoder = new TextEncoder()

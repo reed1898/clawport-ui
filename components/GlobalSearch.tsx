@@ -208,7 +208,7 @@ export function GlobalSearch() {
       all.push({
         id: `agent-${a.id}`,
         label: a.name,
-        subtitle: a.title,
+        subtitle: a.gatewayName ? `${a.title} · 🌐 ${a.gatewayName}` : a.title,
         icon: <Bot size={16} style={{ color: a.color }} />,
         href: `/chat?agent=${a.id}`,
         category: 'Agents',

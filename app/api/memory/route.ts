@@ -4,9 +4,11 @@ import { writeMemoryFile, PathValidationError } from '@/lib/memory-write'
 import { apiErrorResponse } from '@/lib/api-error'
 import { NextResponse } from 'next/server'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const files = await getMemoryFiles()
+    const { searchParams } = new URL(request.url)
+    const gatewayId = searchParams.get('gatewayId')
+    const files = await getMemoryFiles(gatewayId)
     const config = getMemoryConfig()
     const status = getMemoryStatus()
     const stats = computeMemoryStats(files)
@@ -20,13 +22,13 @@ export async function GET() {
 export async function PUT(req: Request) {
   try {
     const body = await req.json()
-    const { relativePath, content, expectedLastModified } = body
+    const { relativePath, content, expectedLastModified, gatewayId } = body
 
     if (typeof content !== 'string') {
       return NextResponse.json({ error: 'Content must be a string' }, { status: 400 })
     }
 
-    const result = writeMemoryFile(relativePath, content, expectedLastModified)
+    const result = writeMemoryFile(relativePath, content, expectedLastModified, gatewayId)
     return NextResponse.json({ ok: true, ...result })
   } catch (err) {
     if (err instanceof PathValidationError) {

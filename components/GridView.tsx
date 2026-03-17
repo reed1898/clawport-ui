@@ -97,6 +97,21 @@ function AgentCard({
         >
           {agent.title}
         </div>
+        {agent.gatewayName && (
+          <div
+            style={{
+              fontSize: "var(--text-caption2)",
+              color: "var(--text-tertiary)",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              marginTop: 1,
+              opacity: 0.7,
+            }}
+          >
+            🌐 {agent.gatewayName}
+          </div>
+        )}
         {agent.description && (
           <div
             style={{

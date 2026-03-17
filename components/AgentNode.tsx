@@ -69,6 +69,9 @@ export function AgentNode({ data, selected }: NodeProps) {
             }}
           >
             {agent.title}
+            {agent.gatewayName && (
+              <span style={{ marginLeft: 4, opacity: 0.7 }}>🌐 {agent.gatewayName}</span>
+            )}
           </div>
         </div>
       </div>

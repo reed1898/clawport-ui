@@ -19,6 +19,11 @@ const {
   mockWriteFileSync: vi.fn(),
 }))
 
+vi.mock('./gateways', () => ({
+  loadGatewayProfiles: () => [{ id: 'default', name: 'Default', baseUrl: 'http://localhost:18789', token: '', workspacePath: '/tmp/test-workspace', mode: 'local' }],
+  resolveGatewayProfile: () => ({ id: 'default', name: 'Default', baseUrl: 'http://localhost:18789', token: '', workspacePath: '/tmp/test-workspace', mode: 'local' }),
+}))
+
 vi.mock('fs', () => ({
   readFileSync: mockReadFileSync,
   appendFileSync: mockAppendFileSync,

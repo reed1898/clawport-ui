@@ -490,6 +490,21 @@ export default function AgentDetailPage({
             >
               {agent.title}
             </p>
+            {agent.gatewayName && (
+              <span
+                style={{
+                  display: "inline-block",
+                  marginTop: "var(--space-1)",
+                  fontSize: "var(--text-caption2)",
+                  color: "var(--text-tertiary)",
+                  background: "var(--fill-secondary)",
+                  padding: "1px 8px",
+                  borderRadius: 6,
+                }}
+              >
+                🌐 {agent.gatewayName}
+              </span>
+            )}
             {agent.model && (
               <span
                 style={{

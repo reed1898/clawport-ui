@@ -50,7 +50,14 @@ function labelForFile(filename: string, fullPath: string, workspacePath: string)
 
 export async function getMemoryFiles(gatewayId?: string | null): Promise<MemoryFileInfo[]> {
   const workspacePath = resolveWorkspacePath(gatewayId)
-  if (!workspacePath) return []
+  if (!workspacePath) {
+    // When no gatewayId specified and no WORKSPACE_PATH, throw for backward compat
+    if (!gatewayId) {
+      const { requireEnv } = await import('@/lib/env')
+      requireEnv('WORKSPACE_PATH') // will throw
+    }
+    return []
+  }
   const files: MemoryFileInfo[] = []
   const memoryDir = join(workspacePath, 'memory')
 

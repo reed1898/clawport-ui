@@ -202,6 +202,95 @@ export async function sendViaOpenClaw(opts: {
   return null
 }
 
+/**
+ * HTTP-based alternative to sendViaOpenClaw for remote gateways.
+ * Posts directly to the gateway's HTTP API instead of shelling out to the CLI.
+ */
+export async function sendViaOpenClawHttp(opts: {
+  gatewayBaseUrl: string
+  gatewayToken: string
+  message: string
+  attachments: OpenClawAttachment[]
+  sessionKey?: string
+  timeoutMs?: number
+}): Promise<string | null> {
+  const sessionKey = opts.sessionKey || 'agent:main:clawport'
+  const idempotencyKey = `clawport-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  const timeoutMs = opts.timeoutMs || 60000
+  const baseUrl = opts.gatewayBaseUrl.replace(/\/v1\/?$/, '')
+
+  try {
+    // Step 1: Send via HTTP
+    const sendResp = await fetch(`${baseUrl}/v1/chat.send`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${opts.gatewayToken}`,
+      },
+      body: JSON.stringify({
+        sessionKey,
+        idempotencyKey,
+        message: opts.message,
+        attachments: opts.attachments,
+      }),
+    })
+
+    if (!sendResp.ok) {
+      console.error('sendViaOpenClawHttp: send failed', sendResp.status, await sendResp.text().catch(() => ''))
+      return null
+    }
+
+    const sendData = await sendResp.json()
+    if (sendData.status !== 'started' && !sendData.runId) {
+      console.error('sendViaOpenClawHttp: unexpected send response:', sendData)
+      return null
+    }
+
+    // Step 2: Poll history via HTTP
+    const pollIntervalMs = 2000
+    const sendTs = Date.now()
+    const deadline = sendTs + timeoutMs
+
+    while (Date.now() < deadline) {
+      await new Promise(r => setTimeout(r, pollIntervalMs))
+
+      const histResp = await fetch(`${baseUrl}/v1/chat.history`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${opts.gatewayToken}`,
+        },
+        body: JSON.stringify({ sessionKey }),
+      })
+
+      if (!histResp.ok) continue
+
+      const history = await histResp.json()
+      const messages = history.messages || []
+      if (messages.length === 0) continue
+
+      const lastMsg = messages[messages.length - 1]
+      if (lastMsg.role === 'assistant' && lastMsg.timestamp >= sendTs) {
+        const content = lastMsg.content
+        if (typeof content === 'string') return content
+        if (Array.isArray(content)) {
+          const textParts = content
+            .filter((p: { type: string }) => p.type === 'text')
+            .map((p: { text: string }) => p.text)
+            .join('\n')
+          return textParts || null
+        }
+      }
+    }
+
+    console.error('sendViaOpenClawHttp: timed out waiting for response')
+    return null
+  } catch (err) {
+    console.error('sendViaOpenClawHttp: error:', err)
+    return null
+  }
+}
+
 function parseDataUrl(url: string): { mediaType: string; data: string } {
   if (!url.startsWith('data:')) {
     return { mediaType: 'image/png', data: url }

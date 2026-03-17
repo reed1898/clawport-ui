@@ -44,8 +44,9 @@ function parseLine(line: string): StoredChatMessage | null {
  * Read chat messages for a ticket from its JSONL file.
  * Returns StoredChatMessage[] sorted oldest-first by timestamp.
  */
-export function getChatMessages(ticketId: string): StoredChatMessage[] {
-  const chatsDir = getChatsDir()
+export function getChatMessages(ticketId: string, gatewayId?: string | null): StoredChatMessage[] {
+  const chatsDir = getChatsDir(gatewayId)
+  if (!chatsDir) return []
   const filePath = path.join(chatsDir, `${ticketId}.jsonl`)
 
   if (!existsSync(filePath)) return []
@@ -69,8 +70,9 @@ export function getChatMessages(ticketId: string): StoredChatMessage[] {
  * Creates the chats directory and file if they don't exist.
  * Deduplicates by message ID to prevent duplicates on retry.
  */
-export function appendChatMessages(ticketId: string, messages: StoredChatMessage[]): void {
-  const chatsDir = getChatsDir()
+export function appendChatMessages(ticketId: string, messages: StoredChatMessage[], gatewayId?: string | null): void {
+  const chatsDir = getChatsDir(gatewayId)
+  if (!chatsDir) return
   mkdirSync(chatsDir, { recursive: true })
 
   const filePath = path.join(chatsDir, `${ticketId}.jsonl`)

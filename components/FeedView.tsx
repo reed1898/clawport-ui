@@ -402,6 +402,11 @@ export function FeedView({ agents, crons, selectedId, onSelect }: FeedViewProps)
                       }}
                     >
                       {agent?.name ?? "Unknown"}
+                      {agent?.gatewayName && (
+                        <span style={{ fontSize: "var(--text-caption2)", color: "var(--text-tertiary)", marginLeft: 4 }}>
+                          🌐 {agent.gatewayName}
+                        </span>
+                      )}
                     </span>
                     <span
                       style={{

@@ -3,9 +3,11 @@ import { computeCostSummary } from '@/lib/costs'
 import { apiErrorResponse } from '@/lib/api-error'
 import { NextResponse } from 'next/server'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const runs = getCronRuns()
+    const { searchParams } = new URL(request.url)
+    const gatewayId = searchParams.get('gatewayId')
+    const runs = getCronRuns(undefined, gatewayId)
     const summary = computeCostSummary(runs)
     return NextResponse.json(summary)
   } catch (err) {

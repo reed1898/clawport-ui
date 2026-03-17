@@ -1,6 +1,7 @@
 import { readFileSync, appendFileSync, mkdirSync, existsSync, unlinkSync, readdirSync, writeFileSync } from 'fs'
 import path from 'path'
 import { getAgentGateway, resolveWorkspacePath } from '@/lib/workspace'
+import { loadGatewayProfiles } from './gateways'
 
 /** Serializable conversation message (no isStreaming, media, or system role) */
 export interface StoredMessage {
@@ -146,9 +147,15 @@ export function listAgentIds(gatewayId?: string): string[] {
   if (!dir || !existsSync(dir)) return []
   try {
     const gateway = getAgentGateway(gatewayId)
+    const gateways = loadGatewayProfiles()
+    const isMultiGateway = gateways.length > 1
+
     return readdirSync(dir)
       .filter(f => f.endsWith('.jsonl'))
-      .map(f => `${gateway.id}__${f.replace(/\.jsonl$/, '')}`)
+      .map(f => {
+        const agentId = f.replace(/\.jsonl$/, '')
+        return isMultiGateway ? `${gateway.id}__${agentId}` : agentId
+      })
   } catch {
     return []
   }

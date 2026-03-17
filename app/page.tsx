@@ -123,7 +123,24 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [view, setView] = useState<View>("map")
+  const [gatewayFilter, setGatewayFilter] = useState<string>("all")
   const closeRef = useRef<HTMLButtonElement>(null)
+
+  // Derive unique gateways from agents
+  const gateways = Array.from(
+    new Map(
+      agents
+        .filter((a) => a.gatewayId && a.gatewayName)
+        .map((a) => [a.gatewayId!, { id: a.gatewayId!, name: a.gatewayName! }])
+    ).values()
+  )
+  const hasMultipleGateways = gateways.length > 1
+
+  // Filter agents by gateway
+  const filteredAgents =
+    gatewayFilter === "all"
+      ? agents
+      : agents.filter((a) => a.gatewayId === gatewayFilter)
 
   const loadData = useCallback(() => {
     setLoading(true)
@@ -192,21 +209,21 @@ export default function HomePage() {
           <MapSkeleton />
         ) : view === "map" ? (
           <OrgMap
-            agents={agents}
+            agents={filteredAgents}
             crons={crons}
             selectedId={selected?.id ?? null}
             onNodeClick={setSelected}
           />
         ) : view === "grid" ? (
           <GridView
-            agents={agents}
+            agents={filteredAgents}
             crons={crons}
             selectedId={selected?.id ?? null}
             onSelect={setSelected}
           />
         ) : (
           <FeedView
-            agents={agents}
+            agents={filteredAgents}
             crons={crons}
             selectedId={selected?.id ?? null}
             onSelect={setSelected}
@@ -271,6 +288,48 @@ export default function HomePage() {
             )
           })}
         </div>
+
+        {/* Gateway filter -- next to view switcher */}
+        {hasMultipleGateways && (
+          <div
+            className="hidden md:flex"
+            style={{
+              position: "absolute",
+              top: "var(--space-4)",
+              left: 200,
+              zIndex: 10,
+              padding: "3px 8px",
+              borderRadius: "var(--radius-sm)",
+              background: "var(--material-regular)",
+              backdropFilter: "blur(20px)",
+              WebkitBackdropFilter: "blur(20px)",
+              border: "1px solid var(--separator)",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            <span style={{ fontSize: "var(--text-caption2)", color: "var(--text-tertiary)" }}>🌐</span>
+            <select
+              value={gatewayFilter}
+              onChange={(e) => setGatewayFilter(e.target.value)}
+              style={{
+                fontSize: "var(--text-caption1)",
+                fontWeight: "var(--weight-medium)",
+                background: "transparent",
+                border: "none",
+                color: "var(--text-primary)",
+                cursor: "pointer",
+                outline: "none",
+                padding: "4px 2px",
+              }}
+            >
+              <option value="all">All Gateways</option>
+              {gateways.map((gw) => (
+                <option key={gw.id} value={gw.id}>{gw.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Legend -- top right (map view only) */}
         {view === "map" && (
