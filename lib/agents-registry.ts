@@ -580,6 +580,91 @@ function loadWorkspaceRegistry(workspacePath: string, openclawBin?: string): Age
 }
 
 /**
+ * Read `openclaw.json` from a synced remote-agents directory to discover
+ * additional agents that exist on the remote gateway but aren't in the
+ * synced workspace directory.
+ *
+ * Looks for `agents.list` array in openclaw.json and creates minimal entries.
+ * The openclaw.json is expected at `<workspacePath>/../openclaw.json`.
+ */
+function discoverRemoteAgentsFromConfig(workspacePath: string): AgentEntry[] {
+  // Try to find openclaw.json next to the workspace dir
+  const configPath = join(workspacePath, '..', 'openclaw.json')
+  if (!existsSync(configPath)) return []
+
+  try {
+    const data = JSON.parse(readFileSync(configPath, 'utf-8'))
+    const agentList: Array<{
+      id?: string; name?: string; default?: boolean;
+      workspace?: string; model?: unknown
+    }> = data?.agents?.list || []
+    if (!Array.isArray(agentList) || agentList.length === 0) return []
+
+    const agents: AgentEntry[] = []
+    let colorIndex = 10
+
+    for (const entry of agentList) {
+      const id = entry.id
+      if (!id) continue
+      const name = entry.name || slugToName(id)
+
+      // Try to discover from the entry's workspace if synced locally
+      // (the primary workspace is already handled by discoverAgents)
+      // For other agent workspaces on the same remote host, we won't have them
+      // synced — just create a minimal entry.
+
+      // Try IDENTITY.md from the entry's local workspace path if it exists
+      let displayName = name
+      let emoji = name.charAt(0).toUpperCase()
+      const entryWorkspace = entry.workspace
+      if (entryWorkspace) {
+        // Check if there's a corresponding synced workspace
+        // e.g., for Maya's "maya" agent with workspace /home/ubuntu/.openclaw/workspace-maya
+        // we might have a synced version, but usually we won't.
+        // Just use the name from agents.list.
+      }
+
+      // Try reading IDENTITY.md from the known workspace
+      const identityPath = join(workspacePath, 'IDENTITY.md')
+      if (existsSync(identityPath) && entry.default) {
+        const identityContent = safeRead(identityPath)
+        if (identityContent) {
+          const identity = parseIdentity(identityContent)
+          if (identity.name) displayName = identity.name
+          if (identity.emoji) emoji = identity.emoji
+        }
+      }
+
+      const modelStr = typeof entry.model === 'string'
+        ? entry.model
+        : (entry.model && typeof entry.model === 'object' && 'primary' in entry.model)
+          ? String((entry.model as { primary: string }).primary)
+          : null
+
+      agents.push({
+        id,
+        name: displayName,
+        title: entry.default ? 'Primary Agent' : 'Agent',
+        reportsTo: null,
+        directReports: [],
+        soulPath: entry.default ? 'SOUL.md' : null,
+        voiceId: null,
+        color: DISCOVER_COLORS[colorIndex++ % DISCOVER_COLORS.length],
+        emoji,
+        tools: ['read', 'write', 'exec', 'message'],
+        model: modelStr,
+        memoryPath: null,
+        description: `${displayName} agent.`,
+      })
+    }
+
+    return agents
+  } catch {
+    return []
+  }
+}
+
+/**
  * Load the agent registry.
  *
  * Resolution order:
@@ -600,9 +685,50 @@ export function loadRegistry(): AgentEntry[] {
     const all: AgentEntry[] = []
     for (const gateway of gateways) {
       if (!gateway.workspacePath) continue
-      const registry = loadWorkspaceRegistry(gateway.workspacePath, openclawBin)
-      if (!registry) continue
-      all.push(...withGatewayContext(registry, gateway, true))
+
+      // For local gateways, use CLI merge to discover all agents
+      if (gateway.mode === 'local' && openclawBin) {
+        const registry = loadWorkspaceRegistry(gateway.workspacePath, openclawBin)
+        if (registry) {
+          const cliAgents = listCliAgents(openclawBin)
+          if (cliAgents && cliAgents.length > 1) {
+            const merged = mergeExtraWorkspaces(registry, cliAgents, gateway.workspacePath)
+            all.push(...withGatewayContext(merged, gateway, true))
+          } else {
+            all.push(...withGatewayContext(registry, gateway, true))
+          }
+          continue
+        }
+      }
+
+      // For remote gateways (or local without CLI), try filesystem + config discovery
+      const registry = loadWorkspaceRegistry(gateway.workspacePath)
+      if (registry) {
+        // Also check openclaw.json for additional agents not in the primary workspace
+        const remoteAgents = discoverRemoteAgentsFromConfig(gateway.workspacePath)
+        const existingIds = new Set(registry.map(a => a.id))
+
+        // Handle ID mismatch: filesystem may discover root as "jesse" (from IDENTITY.md)
+        // but config lists it as "main". Map filesystem root ID to config's default agent ID.
+        const configDefault = remoteAgents.find(a => a.title === 'Primary Agent')
+        const fsRoot = registry.find(a => a.reportsTo === null)
+        if (configDefault && fsRoot && configDefault.id !== fsRoot.id) {
+          // The filesystem root IS the config default — use the config ID
+          fsRoot.id = configDefault.id
+          if (configDefault.model && !fsRoot.model) fsRoot.model = configDefault.model
+          existingIds.add(configDefault.id)
+        }
+
+        const extras = remoteAgents.filter(a => !existingIds.has(a.id))
+        const combined = [...registry, ...extras]
+        all.push(...withGatewayContext(combined, gateway, true))
+      } else {
+        // No filesystem agents — try config-only discovery
+        const remoteAgents = discoverRemoteAgentsFromConfig(gateway.workspacePath)
+        if (remoteAgents.length > 0) {
+          all.push(...withGatewayContext(remoteAgents, gateway, true))
+        }
+      }
     }
     if (all.length > 0) return all
   }
