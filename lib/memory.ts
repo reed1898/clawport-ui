@@ -2,7 +2,8 @@ import type { MemoryFileInfo, MemoryConfig, MemoryStatus, MemoryStats } from '@/
 import { readFileSync, existsSync, statSync, readdirSync } from 'fs'
 import { join, basename, dirname } from 'path'
 import { execSync } from 'child_process'
-import { requireEnv } from '@/lib/env'
+import { resolveWorkspacePath } from '@/lib/workspace'
+import { loadGatewayProfiles } from './gateways'
 
 // ── Date pattern for daily logs ─────────────────────────────────
 
@@ -47,8 +48,9 @@ function labelForFile(filename: string, fullPath: string, workspacePath: string)
 
 // ── getMemoryFiles ──────────────────────────────────────────────
 
-export async function getMemoryFiles(): Promise<MemoryFileInfo[]> {
-  const workspacePath = requireEnv('WORKSPACE_PATH')
+export async function getMemoryFiles(gatewayId?: string | null): Promise<MemoryFileInfo[]> {
+  const workspacePath = resolveWorkspacePath(gatewayId)
+  if (!workspacePath) return []
   const files: MemoryFileInfo[] = []
   const memoryDir = join(workspacePath, 'memory')
 
@@ -66,6 +68,7 @@ export async function getMemoryFiles(): Promise<MemoryFileInfo[]> {
         lastModified: stats.mtime.toISOString(),
         sizeBytes: stats.size,
         category: 'evergreen',
+        gatewayId: gatewayId || 'default',
       })
     } catch { /* skip unreadable */ }
   }
@@ -91,6 +94,7 @@ export async function getMemoryFiles(): Promise<MemoryFileInfo[]> {
             lastModified: stat.mtime.toISOString(),
             sizeBytes: stat.size,
             category,
+            gatewayId: gatewayId || 'default',
           })
         } catch { /* skip unreadable */ }
       }
@@ -132,8 +136,11 @@ const FLUSH_DEFAULTS: MemoryConfig['memoryFlush'] = {
   softThresholdTokens: 80000,
 }
 
-export function getMemoryConfig(): MemoryConfig {
-  const workspacePath = requireEnv('WORKSPACE_PATH')
+export function getMemoryConfig(gatewayId?: string | null): MemoryConfig {
+  const workspacePath = resolveWorkspacePath(gatewayId)
+  if (!workspacePath) {
+    return { memorySearch: SEARCH_DEFAULTS, memoryFlush: FLUSH_DEFAULTS, configFound: false }
+  }
   // openclaw.json is in the parent of the workspace directory
   const configPath = join(dirname(workspacePath), 'openclaw.json')
 
@@ -195,7 +202,7 @@ export function getMemoryConfig(): MemoryConfig {
 
 // ── getMemoryStatus ─────────────────────────────────────────────
 
-export function getMemoryStatus(): MemoryStatus {
+export function getMemoryStatus(gatewayId?: string | null): MemoryStatus {
   const defaults: MemoryStatus = {
     indexed: false,
     lastIndexed: null,
@@ -205,15 +212,17 @@ export function getMemoryStatus(): MemoryStatus {
     raw: 'Memory status unavailable',
   }
 
-  let bin: string
-  try {
-    bin = requireEnv('OPENCLAW_BIN')
-  } catch {
-    return defaults
-  }
+  const bin = process.env.OPENCLAW_BIN
+  if (!bin) return defaults
+
+  const gateway = (gatewayId && loadGatewayProfiles().find(g => g.id === gatewayId)) || loadGatewayProfiles()[0]
 
   try {
-    const output = execSync(`${bin} memory status --deep`, {
+    const cmd = gateway.mode === 'remote'
+      ? `${bin} --gateway ${gateway.id} memory status --deep`
+      : `${bin} memory status --deep`
+
+    const output = execSync(cmd, {
       timeout: 15000,
       encoding: 'utf-8',
       stdio: ['pipe', 'pipe', 'pipe'],

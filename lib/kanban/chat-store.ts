@@ -1,6 +1,6 @@
 import { readFileSync, appendFileSync, mkdirSync, existsSync } from 'fs'
 import path from 'path'
-import { requireEnv } from '@/lib/env'
+import { resolveWorkspacePath } from '@/lib/workspace'
 
 /** Serializable chat message (no isStreaming — UI-only field) */
 export interface StoredChatMessage {
@@ -10,9 +10,12 @@ export interface StoredChatMessage {
   timestamp: number
 }
 
-/** Derive the chats directory from WORKSPACE_PATH */
-function getChatsDir(): string {
-  return path.resolve(requireEnv('WORKSPACE_PATH'), '..', 'kanban', 'chats')
+/** Derive the chats directory from WORKSPACE_PATH, optionally scoped by gateway */
+function getChatsDir(gatewayId?: string | null): string {
+  const workspacePath = resolveWorkspacePath(gatewayId)
+  if (!workspacePath) return ''
+  const base = path.resolve(workspacePath, '..', 'kanban', 'chats')
+  return gatewayId ? path.join(base, gatewayId) : base
 }
 
 /**

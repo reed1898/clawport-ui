@@ -2,6 +2,7 @@ import { existsSync, statSync, writeFileSync, renameSync } from 'fs'
 import { join, resolve } from 'path'
 import { execSync } from 'child_process'
 import { requireEnv } from '@/lib/env'
+import { resolveWorkspacePath } from '@/lib/workspace'
 
 // ── Path validation ─────────────────────────────────────────────
 
@@ -103,13 +104,14 @@ export function normalizeContent(content: string): string {
 export function writeMemoryFile(
   relativePath: string,
   content: string,
-  expectedLastModified?: string
+  expectedLastModified?: string,
+  gatewayId?: string | null
 ): { lastModified: string; sizeBytes: number } {
   // 1. Validate path format
   validateMemoryPath(relativePath)
 
   // 2. Resolve + verify inside workspace
-  const workspacePath = requireEnv('WORKSPACE_PATH')
+  const workspacePath = gatewayId ? resolveWorkspacePath(gatewayId) : requireEnv('WORKSPACE_PATH')
   const absPath = resolveMemoryPath(workspacePath, relativePath)
 
   // 3. File must exist (no creating files via edit)

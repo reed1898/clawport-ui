@@ -182,6 +182,7 @@ export interface MemoryFileInfo {
   lastModified: string
   sizeBytes: number
   category: MemoryFileCategory
+  gatewayId?: string
 }
 
 export interface MemorySearchConfig {
@@ -285,6 +286,7 @@ export interface LogEntry {
   jobId: string | null
   durationMs: number | null
   details: Record<string, unknown>
+  gatewayId?: string
 }
 
 export interface LogSummary {

@@ -1,6 +1,6 @@
 import { readFileSync, appendFileSync, mkdirSync, existsSync, unlinkSync, readdirSync, writeFileSync } from 'fs'
 import path from 'path'
-import { requireEnv } from '@/lib/env'
+import { getAgentGateway, resolveWorkspacePath } from '@/lib/workspace'
 
 /** Serializable conversation message (no isStreaming, media, or system role) */
 export interface StoredMessage {
@@ -17,19 +17,27 @@ const AGENT_ID_RE = /^[a-zA-Z0-9_-]+$/
 
 /** Validate agent ID format. Throws on invalid. */
 export function validateAgentId(id: string): void {
-  if (!AGENT_ID_RE.test(id)) {
+  // Allow scoped agent IDs
+  const agentId = id.includes('__') ? id.split('__')[1] : id
+  if (!AGENT_ID_RE.test(agentId)) {
     throw new Error(`Invalid agent ID: ${id}`)
   }
 }
 
 /** Derive the conversations directory from WORKSPACE_PATH */
-function getConversationsDir(): string {
-  return path.resolve(requireEnv('WORKSPACE_PATH'), '..', 'conversations')
+function getConversationsDir(gatewayId?: string | null): string {
+  const workspacePath = resolveWorkspacePath(gatewayId)
+  if (!workspacePath) return '' // Should not happen if configured correctly
+  const gateway = getAgentGateway(gatewayId)
+  return path.resolve(workspacePath, '..', 'conversations', gateway.id)
 }
 
 /** Derive the clawport config directory from WORKSPACE_PATH */
-function getClawportDir(): string {
-  return path.resolve(requireEnv('WORKSPACE_PATH'), '..', 'clawport')
+function getClawportDir(gatewayId?: string | null): string {
+  const workspacePath = resolveWorkspacePath(gatewayId)
+  if (!workspacePath) return '' // Should not happen
+  const gateway = getAgentGateway(gatewayId)
+  return path.resolve(workspacePath, '..', 'clawport', gateway.id)
 }
 
 /**
@@ -60,8 +68,11 @@ function parseLine(line: string): StoredMessage | null {
  */
 export function getMessages(agentId: string): StoredMessage[] {
   validateAgentId(agentId)
-  const dir = getConversationsDir()
-  const filePath = path.join(dir, `${agentId}.jsonl`)
+  const gateway = getAgentGateway(agentId)
+  const dir = getConversationsDir(gateway.id)
+  if (!dir) return []
+  const id = agentId.includes('__') ? agentId.split('__')[1] : agentId
+  const filePath = path.join(dir, `${id}.jsonl`)
 
   if (!existsSync(filePath)) return []
 
@@ -89,10 +100,13 @@ export function getMessages(agentId: string): StoredMessage[] {
  */
 export function appendMessages(agentId: string, messages: StoredMessage[]): void {
   validateAgentId(agentId)
-  const dir = getConversationsDir()
+  const gateway = getAgentGateway(agentId)
+  const dir = getConversationsDir(gateway.id)
+  if (!dir) return
   mkdirSync(dir, { recursive: true })
 
-  const filePath = path.join(dir, `${agentId}.jsonl`)
+  const id = agentId.includes('__') ? agentId.split('__')[1] : agentId
+  const filePath = path.join(dir, `${id}.jsonl`)
 
   let newMessages = messages
   if (existsSync(filePath)) {
@@ -114,8 +128,11 @@ export function appendMessages(agentId: string, messages: StoredMessage[]): void
 /** Delete an agent's conversation file. */
 export function clearConversation(agentId: string): void {
   validateAgentId(agentId)
-  const dir = getConversationsDir()
-  const filePath = path.join(dir, `${agentId}.jsonl`)
+  const gateway = getAgentGateway(agentId)
+  const dir = getConversationsDir(gateway.id)
+  if (!dir) return
+  const id = agentId.includes('__') ? agentId.split('__')[1] : agentId
+  const filePath = path.join(dir, `${id}.jsonl`)
   try {
     unlinkSync(filePath)
   } catch {
@@ -124,22 +141,24 @@ export function clearConversation(agentId: string): void {
 }
 
 /** List all agent IDs that have stored conversations. */
-export function listAgentIds(): string[] {
-  const dir = getConversationsDir()
-  if (!existsSync(dir)) return []
+export function listAgentIds(gatewayId?: string): string[] {
+  const dir = getConversationsDir(gatewayId)
+  if (!dir || !existsSync(dir)) return []
   try {
+    const gateway = getAgentGateway(gatewayId)
     return readdirSync(dir)
       .filter(f => f.endsWith('.jsonl'))
-      .map(f => f.replace(/\.jsonl$/, ''))
+      .map(f => `${gateway.id}__${f.replace(/\.jsonl$/, '')}`)
   } catch {
     return []
   }
 }
 
 /** Check if onboarding has been completed (server-side marker). */
-export function isOnboarded(): boolean {
+export function isOnboarded(gatewayId?: string): boolean {
   try {
-    const dir = getClawportDir()
+    const dir = getClawportDir(gatewayId)
+    if (!dir) return false
     return existsSync(path.join(dir, '.onboarded'))
   } catch {
     return false
@@ -147,8 +166,9 @@ export function isOnboarded(): boolean {
 }
 
 /** Set or clear the onboarding marker file. */
-export function setOnboarded(value: boolean): void {
-  const dir = getClawportDir()
+export function setOnboarded(value: boolean, gatewayId?: string): void {
+  const dir = getClawportDir(gatewayId)
+  if (!dir) return
   const filePath = path.join(dir, '.onboarded')
   if (value) {
     mkdirSync(dir, { recursive: true })

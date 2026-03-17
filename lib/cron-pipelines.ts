@@ -12,6 +12,7 @@ export interface PipelineEdge {
 export interface Pipeline {
   name: string
   edges: PipelineEdge[]
+  gatewayId?: string
 }
 
 /** Get all pipelines that include a specific job name. */

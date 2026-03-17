@@ -1,11 +1,13 @@
 import { CronRun } from '@/lib/types'
 import { readFileSync, readdirSync, existsSync } from 'fs'
 import path from 'path'
-import { requireEnv } from '@/lib/env'
+import { resolveWorkspacePath } from '@/lib/workspace'
 
 /** Derive the cron runs directory from WORKSPACE_PATH (go up from workspace to .openclaw/cron/runs) */
-function getRunsDir(): string {
-  return path.resolve(requireEnv('WORKSPACE_PATH'), '..', 'cron', 'runs')
+function getRunsDir(gatewayId?: string | null): string {
+  const workspacePath = resolveWorkspacePath(gatewayId)
+  if (!workspacePath) return ''
+  return path.resolve(workspacePath, '..', 'cron', 'runs')
 }
 
 /**
@@ -46,9 +48,9 @@ function parseLine(line: string): CronRun | null {
  * Read JSONL run history files. Returns CronRun[] sorted newest-first.
  * If jobId is provided, reads only that job's file. Otherwise reads all files.
  */
-export function getCronRuns(jobId?: string): CronRun[] {
-  const runsDir = getRunsDir()
-  if (!existsSync(runsDir)) return []
+export function getCronRuns(jobId?: string, gatewayId?: string | null): CronRun[] {
+  const runsDir = getRunsDir(gatewayId)
+  if (!runsDir || !existsSync(runsDir)) return []
 
   let files: string[]
   if (jobId) {

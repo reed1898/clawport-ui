@@ -1,16 +1,21 @@
 import { LogEntry, LogSummary } from '@/lib/types'
 import { readFileSync, readdirSync, existsSync, statSync } from 'fs'
 import path from 'path'
-import { requireEnv } from '@/lib/env'
+import { resolveWorkspacePath } from '@/lib/workspace'
+import { loadGatewayProfiles } from './gateways'
 
 /** Derive the cron runs directory from WORKSPACE_PATH */
-function getRunsDir(): string {
-  return path.resolve(requireEnv('WORKSPACE_PATH'), '..', 'cron', 'runs')
+function getRunsDir(gatewayId?: string | null): string {
+  const workspacePath = resolveWorkspacePath(gatewayId)
+  if (!workspacePath) return ''
+  return path.resolve(workspacePath, '..', 'cron', 'runs')
 }
 
 /** Derive the config audit log path from WORKSPACE_PATH */
-function getConfigAuditPath(): string {
-  return path.resolve(requireEnv('WORKSPACE_PATH'), '..', 'logs', 'config-audit.jsonl')
+function getConfigAuditPath(gatewayId?: string | null): string {
+  const workspacePath = resolveWorkspacePath(gatewayId)
+  if (!workspacePath) return ''
+  return path.resolve(workspacePath, '..', 'logs', 'config-audit.jsonl')
 }
 
 /**
@@ -96,50 +101,56 @@ function buildConfigSummary(obj: Record<string, unknown>): string {
  * Read both log sources, merge, sort newest-first.
  * Options: limit (default 200), source filter ('cron' | 'config').
  */
-export function getLogEntries(opts?: { limit?: number; source?: string }): LogEntry[] {
+export function getLogEntries(opts?: { limit?: number; source?: string; gatewayId?: string | null }): LogEntry[] {
   const limit = opts?.limit ?? 200
   const sourceFilter = opts?.source
+  const gatewayId = opts?.gatewayId
   const entries: LogEntry[] = []
 
-  // Read cron runs
-  if (!sourceFilter || sourceFilter === 'cron') {
-    const runsDir = getRunsDir()
-    if (existsSync(runsDir)) {
-      // Sort files by mtime newest-first for faster limit cutoff
-      const files = readdirSync(runsDir)
-        .filter(f => f.endsWith('.jsonl'))
-        .map(f => ({ name: f, path: path.join(runsDir, f), mtime: statSync(path.join(runsDir, f)).mtimeMs }))
-        .sort((a, b) => b.mtime - a.mtime)
+  const gateways = gatewayId ? [loadGatewayProfiles().find(g => g.id === gatewayId) || loadGatewayProfiles()[0]] : loadGatewayProfiles()
 
-      for (const file of files) {
+  for (const gateway of gateways) {
+    // Read cron runs
+    if (!sourceFilter || sourceFilter === 'cron') {
+      const runsDir = getRunsDir(gateway.id)
+      if (runsDir && existsSync(runsDir)) {
+        // Sort files by mtime newest-first for faster limit cutoff
+        const files = readdirSync(runsDir)
+          .filter(f => f.endsWith('.jsonl'))
+          .map(f => ({ name: f, path: path.join(runsDir, f), mtime: statSync(path.join(runsDir, f)).mtimeMs }))
+          .sort((a, b) => b.mtime - a.mtime)
+
+        for (const file of files) {
+          try {
+            const content = readFileSync(file.path, 'utf-8')
+            for (const line of content.split('\n')) {
+              const entry = parseCronRunLine(line, file.name)
+              if (entry) entries.push({ ...entry, gatewayId: gateway.id })
+            }
+          } catch {
+            // Skip unreadable files
+          }
+        }
+      }
+    }
+
+    // Read config audit
+    if (!sourceFilter || sourceFilter === 'config') {
+      const auditPath = getConfigAuditPath(gateway.id)
+      if (auditPath && existsSync(auditPath)) {
         try {
-          const content = readFileSync(file.path, 'utf-8')
+          const content = readFileSync(auditPath, 'utf-8')
           for (const line of content.split('\n')) {
-            const entry = parseCronRunLine(line, file.name)
-            if (entry) entries.push(entry)
+            const entry = parseConfigAuditLine(line)
+            if (entry) entries.push({ ...entry, gatewayId: gateway.id })
           }
         } catch {
-          // Skip unreadable files
+          // Skip unreadable file
         }
       }
     }
   }
 
-  // Read config audit
-  if (!sourceFilter || sourceFilter === 'config') {
-    const auditPath = getConfigAuditPath()
-    if (existsSync(auditPath)) {
-      try {
-        const content = readFileSync(auditPath, 'utf-8')
-        for (const line of content.split('\n')) {
-          const entry = parseConfigAuditLine(line)
-          if (entry) entries.push(entry)
-        }
-      } catch {
-        // Skip unreadable file
-      }
-    }
-  }
 
   entries.sort((a, b) => b.ts - a.ts)
   return entries.slice(0, limit)
@@ -170,4 +181,3 @@ export function computeLogSummary(entries: LogEntry[]): LogSummary {
     recentErrors: errorEntries.slice(0, 5),
   }
 }
-
