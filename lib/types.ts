@@ -155,6 +155,8 @@ export interface CronJob {
   lastDurationMs: number | null
   consecutiveErrors: number
   lastDeliveryStatus: string | null
+  gatewayId?: string
+  gatewayName?: string
 }
 
 export interface ChatMessage {

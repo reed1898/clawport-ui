@@ -3,6 +3,10 @@ import { execSync } from 'child_process'
 import { parseSchedule, describeCron } from './cron-utils'
 import { requireEnv } from '@/lib/env'
 import { loadRegistry } from '@/lib/agents-registry'
+import { loadGatewayProfiles, type GatewayProfile } from '@/lib/gateways'
+import { composeScopedAgentId, parseScopedAgentId } from '@/lib/scoped-agent-id'
+import { existsSync, readFileSync, readdirSync } from 'fs'
+import { join } from 'path'
 
 /**
  * Match a cron job name to an agent by prefix.
@@ -18,20 +22,126 @@ function matchAgent(name: string, agentIds: string[]): string | null {
 }
 
 export async function getCrons(): Promise<CronJob[]> {
+  const gateways = loadGatewayProfiles()
+  const multiGateway = gateways.length > 1
+  const registry = loadRegistry()
+
+  if (multiGateway) {
+    const all: CronJob[] = []
+    const promises = gateways.map(async (gateway) => {
+      try {
+        // Get unscoped agent IDs for this gateway only
+        const gwAgentIds = registry
+          .filter(a => a.gatewayId === gateway.id)
+          .map(a => {
+            const parsed = parseScopedAgentId(a.id)
+            return parsed ? parsed.agentId : a.id
+          })
+
+        let jobs: CronJob[]
+        if (gateway.mode === 'local') {
+          jobs = fetchCronsViaCli(gwAgentIds)
+        } else {
+          jobs = await fetchCronsViaHttp(gateway, gwAgentIds)
+        }
+        // Tag each job with gateway context
+        return jobs.map(j => ({
+          ...j,
+          gatewayId: gateway.id,
+          gatewayName: gateway.name,
+          // Scope agentId to gateway namespace
+          agentId: j.agentId
+            ? composeScopedAgentId(gateway.id, j.agentId)
+            : null,
+        }))
+      } catch {
+        return []
+      }
+    })
+    const results = await Promise.all(promises)
+    for (const r of results) all.push(...r)
+    return all
+  }
+
+  // Single gateway: existing behavior
+  const agentIds = registry.map(a => a.id)
+  return fetchCronsViaCli(agentIds)
+}
+
+function fetchCronsViaCli(agentIds: string[]): CronJob[] {
   try {
     const openclawBin = requireEnv('OPENCLAW_BIN')
     const raw = execSync(`${openclawBin} cron list --json`, {
       encoding: 'utf-8',
       timeout: 10000,
     })
+    return parseCronJobs(raw, agentIds)
+  } catch (err) {
+    throw new Error(
+      `Failed to fetch cron jobs: ${err instanceof Error ? err.message : String(err)}`
+    )
+  }
+}
 
+async function fetchCronsViaHttp(gateway: GatewayProfile, agentIds: string[]): Promise<CronJob[]> {
+  // OpenClaw gateway uses WebSocket RPC, not HTTP REST.
+  // For remote gateways with synced workspaces, read cron data from the
+  // synced openclaw.json or cron state files.
+  if (!gateway.workspacePath) return []
+
+  const configPath = join(gateway.workspacePath, '..', 'openclaw.json')
+  if (!existsSync(configPath)) return []
+
+  try {
+    const config = JSON.parse(readFileSync(configPath, 'utf-8'))
+    const cronConfig = config?.cron ?? {}
+    const jobs: unknown[] = cronConfig?.jobs ?? []
+    if (!Array.isArray(jobs) || jobs.length === 0) return []
+
+    // Also try to read cron state for last run info
+    const cronStatePath = join(gateway.workspacePath, '..', 'data', 'cron-state.json')
+    let cronState: Record<string, unknown> = {}
+    if (existsSync(cronStatePath)) {
+      try {
+        cronState = JSON.parse(readFileSync(cronStatePath, 'utf-8'))
+      } catch { /* ignore */ }
+    }
+
+    return jobs.map((job: unknown) => {
+      const j = job as Record<string, unknown>
+      const name = String(j.name || j.id || '')
+      const { expression: schedule, timezone } = parseSchedule(j.schedule)
+      const jobState = (cronState[name] ?? cronState[String(j.id)] ?? {}) as Record<string, unknown>
+
+      return {
+        id: String(j.id || j.name || ''),
+        name,
+        schedule,
+        scheduleDescription: describeCron(schedule),
+        timezone,
+        status: 'idle' as const,
+        lastRun: null,
+        nextRun: null,
+        lastError: null,
+        agentId: matchAgent(name, agentIds),
+        description: typeof j.description === 'string' ? j.description : null,
+        enabled: j.enabled !== false,
+        delivery: null,
+        lastDurationMs: null,
+        consecutiveErrors: 0,
+        lastDeliveryStatus: null,
+      }
+    })
+  } catch {
+    return []
+  }
+}
+
+function parseCronJobs(raw: string, agentIds: string[]): CronJob[] {
     const parsed = JSON.parse(raw)
     const jobs: unknown[] = Array.isArray(parsed)
       ? parsed
       : parsed.jobs ?? parsed.data ?? []
-
-    // Load known agent IDs for dynamic cron-to-agent matching
-    const agentIds = loadRegistry().map(a => a.id)
 
     return jobs.map((job: unknown) => {
       const j = job as Record<string, unknown>
@@ -97,9 +207,4 @@ export async function getCrons(): Promise<CronJob[]> {
         lastDeliveryStatus,
       }
     })
-  } catch (err) {
-    throw new Error(
-      `Failed to fetch cron jobs: ${err instanceof Error ? err.message : String(err)}`
-    )
-  }
 }

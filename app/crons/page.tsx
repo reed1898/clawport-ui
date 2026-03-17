@@ -690,10 +690,16 @@ export default function CronsPage() {
                             <span className={`flex-shrink-0 rounded-full ${isError ? "animate-error-pulse" : ""}`} style={{ width: 8, height: 8, background: STATUS_DOT[cron.status] ?? "var(--text-tertiary)" }} />
                             <div className="ml-3 min-w-0 flex-1" style={{ display: "flex", flexDirection: "column" }}>
                               <span className="truncate" style={{ fontSize: "var(--text-footnote)", fontWeight: "var(--weight-semibold)", color: "var(--text-primary)" }}>{cron.name}</span>
-                              {agent && (
-                                <Link href={`/chat/${agent.id}`} onClick={(e) => e.stopPropagation()} className="md:hidden focus-ring" aria-label={`Chat with ${agent.name}`} style={{ fontSize: "var(--text-caption1)", color: "var(--system-blue)", textDecoration: "none", lineHeight: "var(--leading-snug)" }}>
-                                  {agent.name}
-                                </Link>
+                              {(agent || cron.gatewayName) && (
+                                <span style={{ fontSize: "var(--text-caption2)", color: "var(--text-tertiary)", lineHeight: "var(--leading-snug)" }}>
+                                  {agent ? (
+                                    <Link href={`/chat/${agent.id}`} onClick={(e) => e.stopPropagation()} className="md:hidden focus-ring" aria-label={`Chat with ${agent.name}`} style={{ color: "var(--system-blue)", textDecoration: "none" }}>
+                                      {agent.name}
+                                    </Link>
+                                  ) : null}
+                                  {agent && cron.gatewayName ? <span className="md:hidden"> · </span> : null}
+                                  {cron.gatewayName ? <span className="md:hidden">🌐 {cron.gatewayName}</span> : null}
+                                </span>
                               )}
                             </div>
                             <div className="ml-auto flex items-center flex-shrink-0" style={{ gap: "var(--space-3)" }}>
@@ -703,6 +709,11 @@ export default function CronsPage() {
                                 </Link>
                               ) : (
                                 <span className="hidden md:inline" style={{ fontSize: "var(--text-caption1)", color: "var(--text-tertiary)" }}>{"\u2014"}</span>
+                              )}
+                              {cron.gatewayName && (
+                                <span className="hidden md:inline" style={{ fontSize: "var(--text-caption2)", color: "var(--text-tertiary)" }}>
+                                  🌐 {cron.gatewayName}
+                                </span>
                               )}
                               <span className="hidden md:inline" style={{ fontSize: "var(--text-caption1)", color: "var(--text-tertiary)" }}>
                                 {cron.scheduleDescription || cron.schedule}
