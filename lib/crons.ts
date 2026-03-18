@@ -87,54 +87,18 @@ function fetchCronsViaCli(agentIds: string[]): CronJob[] {
 }
 
 async function fetchCronsViaHttp(gateway: GatewayProfile, agentIds: string[]): Promise<CronJob[]> {
-  // OpenClaw gateway uses WebSocket RPC, not HTTP REST.
-  // For remote gateways with synced workspaces, read cron data from the
-  // synced openclaw.json or cron state files.
+  // OpenClaw stores cron jobs in <openclaw_root>/cron/jobs.json at runtime,
+  // NOT in openclaw.json config.  For remote gateways whose .openclaw dir is
+  // synced locally via Syncthing, read the actual jobs file.
   if (!gateway.workspacePath) return []
 
-  const configPath = join(gateway.workspacePath, '..', 'openclaw.json')
-  if (!existsSync(configPath)) return []
+  const openclawRoot = join(gateway.workspacePath, '..')
+  const jobsPath = join(openclawRoot, 'cron', 'jobs.json')
+  if (!existsSync(jobsPath)) return []
 
   try {
-    const config = JSON.parse(readFileSync(configPath, 'utf-8'))
-    const cronConfig = config?.cron ?? {}
-    const jobs: unknown[] = cronConfig?.jobs ?? []
-    if (!Array.isArray(jobs) || jobs.length === 0) return []
-
-    // Also try to read cron state for last run info
-    const cronStatePath = join(gateway.workspacePath, '..', 'data', 'cron-state.json')
-    let cronState: Record<string, unknown> = {}
-    if (existsSync(cronStatePath)) {
-      try {
-        cronState = JSON.parse(readFileSync(cronStatePath, 'utf-8'))
-      } catch { /* ignore */ }
-    }
-
-    return jobs.map((job: unknown) => {
-      const j = job as Record<string, unknown>
-      const name = String(j.name || j.id || '')
-      const { expression: schedule, timezone } = parseSchedule(j.schedule)
-      const jobState = (cronState[name] ?? cronState[String(j.id)] ?? {}) as Record<string, unknown>
-
-      return {
-        id: String(j.id || j.name || ''),
-        name,
-        schedule,
-        scheduleDescription: describeCron(schedule),
-        timezone,
-        status: 'idle' as const,
-        lastRun: null,
-        nextRun: null,
-        lastError: null,
-        agentId: matchAgent(name, agentIds),
-        description: typeof j.description === 'string' ? j.description : null,
-        enabled: j.enabled !== false,
-        delivery: null,
-        lastDurationMs: null,
-        consecutiveErrors: 0,
-        lastDeliveryStatus: null,
-      }
-    })
+    const raw = readFileSync(jobsPath, 'utf-8')
+    return parseCronJobs(raw, agentIds)
   } catch {
     return []
   }
