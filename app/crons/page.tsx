@@ -615,11 +615,11 @@ export default function CronsPage() {
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "var(--space-3)", marginBottom: "var(--space-4)" }} className="summary-cards-grid">
                   <HealthCard ok={counts.ok} total={counts.all} />
                   <AttentionCard errors={errorCrons} />
-                  <DeliveryCard crons={crons} />
+                  <DeliveryCard crons={gwAgentFiltered} />
                 </div>
 
                 {/* Categorized error banners */}
-                <ErrorsBanners crons={crons} agentMap={agentMap} onCopy={copyError} copiedId={copiedId} />
+                <ErrorsBanners crons={gwAgentFiltered} agentMap={agentMap} onCopy={copyError} copiedId={copiedId} />
 
                 {/* Filter pills */}
                 <div
