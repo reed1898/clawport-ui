@@ -145,9 +145,10 @@ describe('Fresh user (no OpenClaw installed)', () => {
       await expect(getMemoryFiles()).rejects.toThrow('Missing required environment variable')
     })
 
-    it('getMemoryConfig throws without WORKSPACE_PATH', () => {
+    it('getMemoryConfig returns defaults without WORKSPACE_PATH', () => {
       vi.stubEnv('WORKSPACE_PATH', '')
-      expect(() => getMemoryConfig()).toThrow('Missing required environment variable')
+      const config = getMemoryConfig()
+      expect(config.configFound).toBe(false)
     })
 
     it('getMemoryStatus returns defaults without OPENCLAW_BIN', () => {

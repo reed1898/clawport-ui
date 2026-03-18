@@ -68,7 +68,7 @@ function renderWizard(props: { forceOpen?: boolean; onClose?: () => void } = {})
 
 describe('OnboardingWizard first-run detection', () => {
   beforeEach(() => {
-    localStorage.clear()
+    window.localStorage.clear()
     mockFetchOnboarded.mockReset()
     mockSyncOnboarded.mockReset()
   })
@@ -85,7 +85,7 @@ describe('OnboardingWizard first-run detection', () => {
     await waitFor(() => {
       expect(container.textContent).toContain('Welcome to ClawPort')
     })
-    expect(localStorage.getItem('clawport-onboarded')).toBeNull()
+    expect(window.localStorage.getItem('clawport-onboarded')).toBeNull()
   })
 
   it('hides wizard and sets localStorage when no flag but server says onboarded', async () => {
@@ -94,14 +94,14 @@ describe('OnboardingWizard first-run detection', () => {
     const { container } = renderWizard()
 
     await waitFor(() => {
-      expect(localStorage.getItem('clawport-onboarded')).toBe('1')
+      expect(window.localStorage.getItem('clawport-onboarded')).toBe('1')
     })
     // Wizard should NOT be visible (returns null)
     expect(container.textContent).not.toContain('Welcome to ClawPort')
   })
 
   it('hides wizard when localStorage flag set and server confirms onboarded', async () => {
-    localStorage.setItem('clawport-onboarded', '1')
+    window.localStorage.setItem('clawport-onboarded', '1')
     mockFetchOnboarded.mockResolvedValue(true)
 
     const { container } = renderWizard()
@@ -110,13 +110,13 @@ describe('OnboardingWizard first-run detection', () => {
       expect(mockFetchOnboarded).toHaveBeenCalled()
     })
     expect(container.textContent).not.toContain('Welcome to ClawPort')
-    expect(localStorage.getItem('clawport-onboarded')).toBe('1')
+    expect(window.localStorage.getItem('clawport-onboarded')).toBe('1')
   })
 
   // THE KEY BUG FIX TEST: workspace moved, server says not onboarded,
   // but localStorage still has the stale flag
   it('shows wizard when localStorage flag is set but server says NOT onboarded (workspace moved)', async () => {
-    localStorage.setItem('clawport-onboarded', '1')
+    window.localStorage.setItem('clawport-onboarded', '1')
     mockFetchOnboarded.mockResolvedValue(false)
 
     const { container } = renderWizard()
@@ -125,11 +125,11 @@ describe('OnboardingWizard first-run detection', () => {
       expect(container.textContent).toContain('Welcome to ClawPort')
     })
     // Stale localStorage flag should be cleared
-    expect(localStorage.getItem('clawport-onboarded')).toBeNull()
+    expect(window.localStorage.getItem('clawport-onboarded')).toBeNull()
   })
 
   it('trusts localStorage when server is unreachable (existing user, gateway down)', async () => {
-    localStorage.setItem('clawport-onboarded', '1')
+    window.localStorage.setItem('clawport-onboarded', '1')
     mockFetchOnboarded.mockRejectedValue(new Error('Network error'))
 
     const { container } = renderWizard()
@@ -139,7 +139,7 @@ describe('OnboardingWizard first-run detection', () => {
     })
     // Should NOT show wizard -- trust the localStorage flag
     expect(container.textContent).not.toContain('Welcome to ClawPort')
-    expect(localStorage.getItem('clawport-onboarded')).toBe('1')
+    expect(window.localStorage.getItem('clawport-onboarded')).toBe('1')
   })
 
   it('shows wizard when no localStorage flag and server is unreachable (fresh install)', async () => {
@@ -153,7 +153,7 @@ describe('OnboardingWizard first-run detection', () => {
   })
 
   it('always shows wizard when forceOpen is true regardless of flags', async () => {
-    localStorage.setItem('clawport-onboarded', '1')
+    window.localStorage.setItem('clawport-onboarded', '1')
     // fetchOnboarded should NOT even be called with forceOpen
     mockFetchOnboarded.mockResolvedValue(true)
 
