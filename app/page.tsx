@@ -139,6 +139,13 @@ export default function HomePage() {
     return true
   })
 
+  // Filter crons by gateway and agent (match agent filter via cron.agentId)
+  const filteredCrons = crons.filter((c) => {
+    if (gatewayFilter !== "all" && c.gatewayId !== gatewayFilter) return false
+    if (agentFilter !== "all" && c.agentId !== agentFilter) return false
+    return true
+  })
+
   const loadData = useCallback(() => {
     setLoading(true)
     setError(null)
@@ -182,7 +189,7 @@ export default function HomePage() {
     return () => window.removeEventListener("keydown", handleKeyDown)
   }, [selected])
 
-  const agentCrons = selected ? crons.filter((c) => c.agentId === selected.id) : []
+  const agentCrons = selected ? filteredCrons.filter((c) => c.agentId === selected.id) : []
 
   // Find hierarchy info for the detail panel
   const parentAgent = selected?.reportsTo
@@ -207,21 +214,21 @@ export default function HomePage() {
         ) : view === "map" ? (
           <OrgMap
             agents={filteredAgents}
-            crons={crons}
+            crons={filteredCrons}
             selectedId={selected?.id ?? null}
             onNodeClick={setSelected}
           />
         ) : view === "grid" ? (
           <GridView
             agents={filteredAgents}
-            crons={crons}
+            crons={filteredCrons}
             selectedId={selected?.id ?? null}
             onSelect={setSelected}
           />
         ) : (
           <FeedView
             agents={filteredAgents}
-            crons={crons}
+            crons={filteredCrons}
             selectedId={selected?.id ?? null}
             onSelect={setSelected}
           />
