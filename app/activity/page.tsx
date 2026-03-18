@@ -1,12 +1,13 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import type { LogEntry, LogFilter, LogSummary } from '@/lib/types'
+import type { Agent, LogEntry, LogFilter, LogSummary } from '@/lib/types'
 import { timeAgo } from '@/lib/cron-utils'
 import { Skeleton } from '@/components/ui/skeleton'
 import { RefreshCw, Radio } from 'lucide-react'
 import { ErrorState } from '@/components/ErrorState'
 import { LogBrowser } from '@/components/activity/LogBrowser'
+import { GatewayAgentFilter } from '@/components/GatewayAgentFilter'
 
 /* ── Summary Cards ─────────────────────────────────────────────── */
 
@@ -92,18 +93,31 @@ export default function ActivityPage() {
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [updatedAgo, setUpdatedAgo] = useState('just now')
+  const [agents, setAgents] = useState<Agent[]>([])
+  const [gatewayFilter, setGatewayFilter] = useState<string>('all')
+  const [agentFilter, setAgentFilter] = useState<string>('all')
 
   const refresh = useCallback(() => {
     setRefreshing(true)
     setError(null)
-    fetch('/api/logs')
-      .then(r => {
+    const logParams = new URLSearchParams()
+    if (gatewayFilter !== 'all') logParams.set('gatewayId', gatewayFilter)
+    const logUrl = '/api/logs' + (logParams.toString() ? '?' + logParams.toString() : '')
+
+    Promise.all([
+      fetch(logUrl).then(r => {
         if (!r.ok) throw new Error('Failed to load logs')
         return r.json()
-      })
-      .then((data: { entries: LogEntry[]; summary: LogSummary }) => {
+      }),
+      fetch('/api/agents').then(r => {
+        if (!r.ok) throw new Error('Failed to load agents')
+        return r.json()
+      }),
+    ])
+      .then(([data, agentData]: [{ entries: LogEntry[]; summary: LogSummary }, Agent[]]) => {
         setEntries(data.entries)
         setSummary(data.summary)
+        setAgents(agentData)
         setLastRefresh(new Date())
         setLoading(false)
         setRefreshing(false)
@@ -113,7 +127,7 @@ export default function ActivityPage() {
         setLoading(false)
         setRefreshing(false)
       })
-  }, [])
+  }, [gatewayFilter])
 
   // Initial load + polling
   useEffect(() => {
@@ -169,6 +183,14 @@ export default function ActivityPage() {
             )}
           </div>
           <div className="flex items-center" style={{ gap: 'var(--space-3)' }}>
+            <GatewayAgentFilter
+              agents={agents}
+              gatewayFilter={gatewayFilter}
+              agentFilter={agentFilter}
+              onGatewayChange={setGatewayFilter}
+              onAgentChange={setAgentFilter}
+            />
+
             {/* Open Live Stream */}
             <button
               onClick={() => window.dispatchEvent(new CustomEvent('clawport:open-stream-widget'))}
@@ -251,7 +273,7 @@ export default function ActivityPage() {
 
             {/* Log browser */}
             <LogBrowser
-              entries={entries}
+              entries={agentFilter === 'all' ? entries : entries.filter(e => e.agentId === agentFilter)}
               summary={summary}
               loading={false}
               filter={filter}

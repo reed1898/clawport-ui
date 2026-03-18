@@ -15,6 +15,7 @@ import { TopCrons } from './TopCrons'
 import { RunDetailTable } from './RunDetailTable'
 import { OptimizationCard } from './OptimizationPanel'
 import { ClaudeUsageRow } from './ClaudeUsageRow'
+import { GatewayAgentFilter } from '@/components/GatewayAgentFilter'
 
 /* ── Chat message type ───────────────────────────────────────── */
 
@@ -43,6 +44,10 @@ export function CostsPage() {
   const [chatInput, setChatInput] = useState('')
   const [chatStreaming, setChatStreaming] = useState(false)
 
+  // Gateway/Agent filter state
+  const [gatewayFilter, setGatewayFilter] = useState<string>('all')
+  const [agentFilter, setAgentFilter] = useState<string>('all')
+
   // Claude Code usage state
   const [claudeUsage, setClaudeUsage] = useState<ClaudeCodeUsage | null>(null)
 
@@ -55,8 +60,12 @@ export function CostsPage() {
     setLoading(true)
     setError(null)
 
+    const costParams = new URLSearchParams()
+    if (gatewayFilter !== 'all') costParams.set('gatewayId', gatewayFilter)
+    const costUrl = '/api/costs' + (costParams.toString() ? '?' + costParams.toString() : '')
+
     Promise.all([
-      fetch('/api/costs').then(r => {
+      fetch(costUrl).then(r => {
         if (!r.ok) throw new Error('Failed to load costs')
         return r.json()
       }),
@@ -83,7 +92,7 @@ export function CostsPage() {
         setError(err instanceof Error ? err.message : 'Unknown error')
         setLoading(false)
       })
-  }, [])
+  }, [gatewayFilter])
 
   // Claude Code usage SSE stream
   useEffect(() => {
@@ -263,24 +272,35 @@ export function CostsPage() {
           padding: 'var(--space-4) var(--space-6)',
         }}
       >
-        <h1 style={{
-          fontSize: 'var(--text-title1)',
-          fontWeight: 'var(--weight-bold)',
-          color: 'var(--text-primary)',
-          letterSpacing: '-0.5px',
-          lineHeight: 'var(--leading-tight)',
-        }}>
-          Costs & Optimization
-        </h1>
-        {!loading && data && (
-          <p style={{ fontSize: 'var(--text-footnote)', color: 'var(--text-secondary)', marginTop: 'var(--space-1)' }}>
-            {dateRange
-              ? `${dateRange.oldest.toLocaleDateString()} - ${dateRange.newest.toLocaleDateString()}`
-              : 'No data'}
-            {' \u00b7 '}
-            {data.runCosts.length} run{data.runCosts.length !== 1 ? 's' : ''} with cost data
-          </p>
-        )}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 style={{
+              fontSize: 'var(--text-title1)',
+              fontWeight: 'var(--weight-bold)',
+              color: 'var(--text-primary)',
+              letterSpacing: '-0.5px',
+              lineHeight: 'var(--leading-tight)',
+            }}>
+              Costs & Optimization
+            </h1>
+            {!loading && data && (
+              <p style={{ fontSize: 'var(--text-footnote)', color: 'var(--text-secondary)', marginTop: 'var(--space-1)' }}>
+                {dateRange
+                  ? `${dateRange.oldest.toLocaleDateString()} - ${dateRange.newest.toLocaleDateString()}`
+                  : 'No data'}
+                {' \u00b7 '}
+                {data.runCosts.length} run{data.runCosts.length !== 1 ? 's' : ''} with cost data
+              </p>
+            )}
+          </div>
+          <GatewayAgentFilter
+            agents={agents}
+            gatewayFilter={gatewayFilter}
+            agentFilter={agentFilter}
+            onGatewayChange={setGatewayFilter}
+            onAgentChange={setAgentFilter}
+          />
+        </div>
       </header>
 
       {/* ── Scrollable content ─────────────────────────────────── */}

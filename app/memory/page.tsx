@@ -40,6 +40,7 @@ import { generateId } from "@/lib/id";
 import { timeAgo } from "@/lib/cron-utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ErrorState";
+import { GatewayAgentFilter } from "@/components/GatewayAgentFilter";
 import { computeEditingHints } from "@/lib/memory-hints";
 import { fileHealthSeverity } from "@/lib/memory-health";
 import {
@@ -1513,6 +1514,10 @@ export default function MemoryPage() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [pendingFile, setPendingFile] = useState<MemoryFileInfo | null>(null);
 
+  // Gateway/Agent filter state
+  const [gatewayFilter, setGatewayFilter] = useState<string>("all");
+  const [agentFilter, setAgentFilter] = useState<string>("all");
+
   // AI Memory Advisor state
   const [agents, setAgents] = useState<Agent[]>([]);
   const [analysisOpen, setAnalysisOpen] = useState(false);
@@ -1538,7 +1543,10 @@ export default function MemoryPage() {
   const refresh = useCallback(() => {
     setLoading(true);
     setError(null);
-    fetch("/api/memory")
+    const memParams = new URLSearchParams();
+    if (gatewayFilter !== "all") memParams.set("gatewayId", gatewayFilter);
+    const memUrl = "/api/memory" + (memParams.toString() ? "?" + memParams.toString() : "");
+    fetch(memUrl)
       .then((r) => {
         if (!r.ok) throw new Error("Failed to load memory files");
         return r.json();
@@ -1570,7 +1578,7 @@ export default function MemoryPage() {
         setError(err instanceof Error ? err.message : "Unknown error");
         setLoading(false);
       });
-  }, []);
+  }, [gatewayFilter]);
 
   useEffect(() => {
     refresh();
@@ -2192,26 +2200,35 @@ export default function MemoryPage() {
               </p>
             )}
           </div>
-          <button
-            onClick={refresh}
-            className="focus-ring"
-            aria-label="Refresh memory data"
-            style={{
-              width: 32,
-              height: 32,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: "var(--radius-sm)",
-              border: "none",
-              background: "transparent",
-              color: "var(--text-tertiary)",
-              cursor: "pointer",
-              transition: "color 150ms var(--ease-smooth)",
-            }}
-          >
-            <RefreshCw size={16} />
-          </button>
+          <div className="flex items-center" style={{ gap: "var(--space-3)" }}>
+            <GatewayAgentFilter
+              agents={agents}
+              gatewayFilter={gatewayFilter}
+              agentFilter={agentFilter}
+              onGatewayChange={setGatewayFilter}
+              onAgentChange={setAgentFilter}
+            />
+            <button
+              onClick={refresh}
+              className="focus-ring"
+              aria-label="Refresh memory data"
+              style={{
+                width: 32,
+                height: 32,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: "var(--radius-sm)",
+                border: "none",
+                background: "transparent",
+                color: "var(--text-tertiary)",
+                cursor: "pointer",
+                transition: "color 150ms var(--ease-smooth)",
+              }}
+            >
+              <RefreshCw size={16} />
+            </button>
+          </div>
         </div>
 
         {/* ── Tab navigation ─────────────────────────────────── */}

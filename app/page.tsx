@@ -10,6 +10,7 @@ import { ErrorState } from "@/components/ErrorState"
 import { AgentAvatar } from "@/components/AgentAvatar"
 import { GridView } from "@/components/GridView"
 import { FeedView } from "@/components/FeedView"
+import { GatewayAgentFilter, deriveGateways } from "@/components/GatewayAgentFilter"
 
 const OrgMap = dynamic(
   () => import("@/components/OrgMap").then((m) => ({ default: m.OrgMap })),
@@ -124,23 +125,19 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null)
   const [view, setView] = useState<View>("map")
   const [gatewayFilter, setGatewayFilter] = useState<string>("all")
+  const [agentFilter, setAgentFilter] = useState<string>("all")
   const closeRef = useRef<HTMLButtonElement>(null)
 
   // Derive unique gateways from agents
-  const gateways = Array.from(
-    new Map(
-      agents
-        .filter((a) => a.gatewayId && a.gatewayName)
-        .map((a) => [a.gatewayId!, { id: a.gatewayId!, name: a.gatewayName! }])
-    ).values()
-  )
+  const gateways = deriveGateways(agents)
   const hasMultipleGateways = gateways.length > 1
 
-  // Filter agents by gateway
-  const filteredAgents =
-    gatewayFilter === "all"
-      ? agents
-      : agents.filter((a) => a.gatewayId === gatewayFilter)
+  // Filter agents by gateway and agent
+  const filteredAgents = agents.filter((a) => {
+    if (gatewayFilter !== "all" && a.gatewayId !== gatewayFilter) return false
+    if (agentFilter !== "all" && a.id !== agentFilter) return false
+    return true
+  })
 
   const loadData = useCallback(() => {
     setLoading(true)
@@ -289,7 +286,7 @@ export default function HomePage() {
           })}
         </div>
 
-        {/* Gateway filter -- next to view switcher */}
+        {/* Gateway + Agent filter -- next to view switcher */}
         {hasMultipleGateways && (
           <div
             className="hidden md:flex"
@@ -298,36 +295,15 @@ export default function HomePage() {
               top: "var(--space-4)",
               left: 200,
               zIndex: 10,
-              padding: "3px 8px",
-              borderRadius: "var(--radius-sm)",
-              background: "var(--material-regular)",
-              backdropFilter: "blur(20px)",
-              WebkitBackdropFilter: "blur(20px)",
-              border: "1px solid var(--separator)",
-              alignItems: "center",
-              gap: 6,
             }}
           >
-            <span style={{ fontSize: "var(--text-caption2)", color: "var(--text-tertiary)" }}>🌐</span>
-            <select
-              value={gatewayFilter}
-              onChange={(e) => setGatewayFilter(e.target.value)}
-              style={{
-                fontSize: "var(--text-caption1)",
-                fontWeight: "var(--weight-medium)",
-                background: "transparent",
-                border: "none",
-                color: "var(--text-primary)",
-                cursor: "pointer",
-                outline: "none",
-                padding: "4px 2px",
-              }}
-            >
-              <option value="all">All Gateways</option>
-              {gateways.map((gw) => (
-                <option key={gw.id} value={gw.id}>{gw.name}</option>
-              ))}
-            </select>
+            <GatewayAgentFilter
+              agents={agents}
+              gatewayFilter={gatewayFilter}
+              agentFilter={agentFilter}
+              onGatewayChange={setGatewayFilter}
+              onAgentChange={setAgentFilter}
+            />
           </div>
         )}
 

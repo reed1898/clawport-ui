@@ -8,6 +8,7 @@ import { formatDuration, timeAgo, nextRunLabel } from "@/lib/cron-utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RefreshCw, BarChart3, Calendar, GitBranch, Copy, Check } from "lucide-react";
 import { ErrorState } from "@/components/ErrorState";
+import { GatewayAgentFilter } from "@/components/GatewayAgentFilter";
 import { WeeklySchedule } from "@/components/crons/WeeklySchedule";
 import { PipelineGraph } from "@/components/crons/PipelineGraph";
 import { PipelineDetailPanel } from "@/components/crons/PipelineDetailPanel";
@@ -404,6 +405,8 @@ export default function CronsPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [selectedPipelineJob, setSelectedPipelineJob] = useState<string | null>(null);
+  const [gatewayFilter, setGatewayFilter] = useState<string>("all");
+  const [agentFilter, setAgentFilter] = useState<string>("all");
 
   const pillsRef = useRef<HTMLDivElement>(null);
 
@@ -457,16 +460,24 @@ export default function CronsPage() {
   /* Derived data */
   const agentMap = new Map(agents.map((a) => [a.id, a]));
   const statusOrder: Record<string, number> = { error: 0, idle: 1, ok: 2 };
-  const filtered = crons
+
+  // Apply gateway + agent filter first
+  const gwAgentFiltered = crons.filter((c) => {
+    if (gatewayFilter !== "all" && c.gatewayId !== gatewayFilter) return false;
+    if (agentFilter !== "all" && c.agentId !== agentFilter) return false;
+    return true;
+  });
+
+  const filtered = gwAgentFiltered
     .filter((c) => filter === "all" || c.status === filter)
     .sort((a, b) => (statusOrder[a.status] ?? 9) - (statusOrder[b.status] ?? 9));
   const counts = {
-    all: crons.length,
-    ok: crons.filter((c) => c.status === "ok").length,
-    error: crons.filter((c) => c.status === "error").length,
-    idle: crons.filter((c) => c.status === "idle").length,
+    all: gwAgentFiltered.length,
+    ok: gwAgentFiltered.filter((c) => c.status === "ok").length,
+    error: gwAgentFiltered.filter((c) => c.status === "error").length,
+    idle: gwAgentFiltered.filter((c) => c.status === "idle").length,
   };
-  const errorCrons = crons.filter((c) => c.status === "error");
+  const errorCrons = gwAgentFiltered.filter((c) => c.status === "error");
 
   function handlePillKeyDown(e: React.KeyboardEvent) {
     const pills = pillsRef.current;
@@ -518,6 +529,13 @@ export default function CronsPage() {
             )}
           </div>
           <div className="flex items-center" style={{ gap: "var(--space-3)" }}>
+            <GatewayAgentFilter
+              agents={agents}
+              gatewayFilter={gatewayFilter}
+              agentFilter={agentFilter}
+              onGatewayChange={setGatewayFilter}
+              onAgentChange={setAgentFilter}
+            />
             <span style={{ fontSize: "var(--text-caption1)", color: "var(--text-tertiary)" }}>Updated {updatedAgo}</span>
             <button
               onClick={refresh}
@@ -835,7 +853,7 @@ export default function CronsPage() {
             )}
 
             {/* ─── SCHEDULE TAB ──────────────────────────────── */}
-            {tab === "schedule" && <WeeklySchedule crons={crons} />}
+            {tab === "schedule" && <WeeklySchedule crons={gwAgentFiltered} />}
 
             {/* ─── PIPELINES TAB ─────────────────────────────── */}
             {tab === "pipelines" && (
