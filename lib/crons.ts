@@ -45,16 +45,29 @@ export async function getCrons(): Promise<CronJob[]> {
         } else {
           jobs = await fetchCronsViaHttp(gateway, gwAgentIds)
         }
+        // Build a set of valid scoped IDs for this gateway
+        const gwScopedIds = new Set(gwAgentIds.map(id => composeScopedAgentId(gateway.id, id)))
+        // Fallback: root agent for this gateway (first in registry)
+        const rootScoped = gwAgentIds.length > 0
+          ? composeScopedAgentId(gateway.id, gwAgentIds[0])
+          : null
+
         // Tag each job with gateway context
-        return jobs.map(j => ({
-          ...j,
-          gatewayId: gateway.id,
-          gatewayName: gateway.name,
-          // Scope agentId to gateway namespace
-          agentId: j.agentId
-            ? composeScopedAgentId(gateway.id, j.agentId)
-            : null,
-        }))
+        return jobs.map(j => {
+          let scopedAgent: string | null = null
+          if (j.agentId) {
+            const candidate = composeScopedAgentId(gateway.id, j.agentId)
+            // Use as-is if it maps to a known agent, otherwise fall back
+            // to the gateway's root agent (handles "main" ≠ actual agent id)
+            scopedAgent = gwScopedIds.has(candidate) ? candidate : (rootScoped ?? null)
+          }
+          return {
+            ...j,
+            gatewayId: gateway.id,
+            gatewayName: gateway.name,
+            agentId: scopedAgent,
+          }
+        })
       } catch {
         return []
       }
@@ -165,7 +178,9 @@ function parseCronJobs(raw: string, agentIds: string[]): CronJob[] {
         lastRun,
         nextRun,
         lastError,
-        agentId: matchAgent(name, agentIds),
+        agentId: (typeof j.agentId === 'string' && j.agentId)
+          ? j.agentId
+          : matchAgent(name, agentIds),
         description: typeof j.description === 'string' ? j.description : null,
         enabled: j.enabled !== false,
         delivery,
