@@ -3,14 +3,20 @@ import { computeMemoryHealth } from '@/lib/memory-health'
 import { writeMemoryFile, PathValidationError } from '@/lib/memory-write'
 import { apiErrorResponse } from '@/lib/api-error'
 import { NextResponse } from 'next/server'
+import { resolveAgentWorkspacePath } from '@/lib/workspace'
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
+    const agentId = searchParams.get('agentId')
     const gatewayId = searchParams.get('gatewayId')
-    const files = await getMemoryFiles(gatewayId)
-    const config = getMemoryConfig()
-    const status = getMemoryStatus()
+
+    // Agent-level filtering: resolve workspace from agent registry
+    // Falls back to gateway-level if no agentId provided
+    const workspaceOverride = agentId ? resolveAgentWorkspacePath(agentId) : undefined
+    const files = await getMemoryFiles(gatewayId, workspaceOverride)
+    const config = getMemoryConfig(gatewayId, workspaceOverride)
+    const status = getMemoryStatus(gatewayId)
     const stats = computeMemoryStats(files)
     const health = computeMemoryHealth(files, config, status, stats)
     return NextResponse.json({ files, config, status, stats, health })

@@ -1544,7 +1544,12 @@ export default function MemoryPage() {
     setLoading(true);
     setError(null);
     const memParams = new URLSearchParams();
-    if (gatewayFilter !== "all") memParams.set("gatewayId", gatewayFilter);
+    // Agent-level filtering takes priority — each agent has its own workspace/memory
+    if (agentFilter !== "all") {
+      memParams.set("agentId", agentFilter);
+    } else if (gatewayFilter !== "all") {
+      memParams.set("gatewayId", gatewayFilter);
+    }
     const memUrl = "/api/memory" + (memParams.toString() ? "?" + memParams.toString() : "");
     fetch(memUrl)
       .then((r) => {
@@ -1578,7 +1583,7 @@ export default function MemoryPage() {
         setError(err instanceof Error ? err.message : "Unknown error");
         setLoading(false);
       });
-  }, [gatewayFilter]);
+  }, [gatewayFilter, agentFilter]);
 
   useEffect(() => {
     refresh();
@@ -2207,7 +2212,6 @@ export default function MemoryPage() {
               agentFilter={agentFilter}
               onGatewayChange={setGatewayFilter}
               onAgentChange={setAgentFilter}
-              showAgentFilter={false}
             />
             <button
               onClick={refresh}

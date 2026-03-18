@@ -556,7 +556,8 @@ function withGatewayContext(
       directReports: agent.directReports.map(id => idMap.get(id) || id),
       gatewayId: gateway.id,
       gatewayName: gateway.name,
-      workspacePath: gateway.workspacePath,
+      // Preserve agent-specific workspace (e.g. workspace-maya) when set
+      workspacePath: agent.workspacePath || gateway.workspacePath,
     }
   })
 }
@@ -611,25 +612,30 @@ function discoverRemoteAgentsFromConfig(workspacePath: string): AgentEntry[] {
       if (!id) continue
       const name = entry.name || slugToName(id)
 
-      // Try to discover from the entry's workspace if synced locally
-      // (the primary workspace is already handled by discoverAgents)
-      // For other agent workspaces on the same remote host, we won't have them
-      // synced — just create a minimal entry.
-
-      // Try IDENTITY.md from the entry's local workspace path if it exists
+      // Resolve this agent's local workspace path.
+      // Remote workspace paths (e.g. /home/ubuntu/.openclaw/workspace-maya)
+      // are synced locally under the gateway root with the same dir name.
       let displayName = name
       let emoji = name.charAt(0).toUpperCase()
+      const gatewayRoot = join(workspacePath, '..')
+      let localWs: string | null = null
       const entryWorkspace = entry.workspace
       if (entryWorkspace) {
-        // Check if there's a corresponding synced workspace
-        // e.g., for Maya's "maya" agent with workspace /home/ubuntu/.openclaw/workspace-maya
-        // we might have a synced version, but usually we won't.
-        // Just use the name from agents.list.
+        const wsDir = basename(entryWorkspace) // e.g. "workspace-maya"
+        const candidate = join(gatewayRoot, wsDir)
+        if (existsSync(candidate)) {
+          localWs = candidate
+        }
+      }
+      // Default agent uses the primary gateway workspacePath
+      if (!localWs && entry.default) {
+        localWs = workspacePath
       }
 
-      // Try reading IDENTITY.md from the known workspace
-      const identityPath = join(workspacePath, 'IDENTITY.md')
-      if (existsSync(identityPath) && entry.default) {
+      // Try reading IDENTITY.md from the resolved workspace
+      const identityDir = localWs || workspacePath
+      const identityPath = join(identityDir, 'IDENTITY.md')
+      if (existsSync(identityPath)) {
         const identityContent = safeRead(identityPath)
         if (identityContent) {
           const identity = parseIdentity(identityContent)
@@ -658,6 +664,8 @@ function discoverRemoteAgentsFromConfig(workspacePath: string): AgentEntry[] {
         model: modelStr,
         memoryPath: null,
         description: `${displayName} agent.`,
+        // Set agent-specific workspace (resolved from remote path to local sync dir)
+        workspacePath: localWs || undefined,
       })
     }
 

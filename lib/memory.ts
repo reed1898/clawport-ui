@@ -48,8 +48,8 @@ function labelForFile(filename: string, fullPath: string, workspacePath: string)
 
 // ── getMemoryFiles ──────────────────────────────────────────────
 
-export async function getMemoryFiles(gatewayId?: string | null): Promise<MemoryFileInfo[]> {
-  const workspacePath = resolveWorkspacePath(gatewayId)
+export async function getMemoryFiles(gatewayId?: string | null, workspaceOverride?: string): Promise<MemoryFileInfo[]> {
+  const workspacePath = workspaceOverride || resolveWorkspacePath(gatewayId)
   if (!workspacePath) {
     // When no gatewayId specified and no WORKSPACE_PATH, throw for backward compat
     if (!gatewayId) {
@@ -143,8 +143,8 @@ const FLUSH_DEFAULTS: MemoryConfig['memoryFlush'] = {
   softThresholdTokens: 80000,
 }
 
-export function getMemoryConfig(gatewayId?: string | null): MemoryConfig {
-  const workspacePath = resolveWorkspacePath(gatewayId)
+export function getMemoryConfig(gatewayId?: string | null, workspaceOverride?: string): MemoryConfig {
+  const workspacePath = workspaceOverride || resolveWorkspacePath(gatewayId)
   if (!workspacePath) {
     return { memorySearch: SEARCH_DEFAULTS, memoryFlush: FLUSH_DEFAULTS, configFound: false }
   }
