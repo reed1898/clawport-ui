@@ -70,6 +70,7 @@ vi.mock('@/lib/agents.json', () => ({
 
 import { getAgents } from './agents'
 import { loadRegistry } from './agents-registry'
+import { invalidateCache } from './cache'
 import { getMemoryFiles, getMemoryConfig, getMemoryStatus, computeMemoryStats } from './memory'
 import { requireEnv } from './env'
 import { loadPipelines } from './cron-pipelines.server'
@@ -655,6 +656,7 @@ describe('Transition scenarios', () => {
     expect(bundled[0].id).toBe('example')
 
     // Phase 2: Workspace created with agents → auto-discovery
+    invalidateCache()
     vi.stubEnv('WORKSPACE_PATH', WS)
     mockExistsSync.mockImplementation((p: string) => {
       if (p === `${WS}/clawport/agents.json`) return false
@@ -707,6 +709,7 @@ describe('Transition scenarios', () => {
     expect(auto[0].id).toBe('bot')
 
     // Phase 2: User drops agents.json → override
+    invalidateCache()
     const customAgents = [
       { id: 'custom-root', name: 'Root', title: 'Boss', reportsTo: null, directReports: [], soulPath: null, voiceId: null, color: '#ff0000', emoji: 'R', tools: ['exec'], memoryPath: null, description: 'Boss.' },
     ]

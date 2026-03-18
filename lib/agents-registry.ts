@@ -5,6 +5,7 @@ import bundledRegistry from '@/lib/agents.json'
 import type { Agent } from '@/lib/types'
 import { loadGatewayProfiles, type GatewayProfile } from '@/lib/gateways'
 import { composeScopedAgentId } from '@/lib/scoped-agent-id'
+import { cachedCallSync } from '@/lib/cache'
 
 /** Raw agent data from JSON (everything except runtime-loaded soul and crons) */
 export type AgentEntry = Omit<Agent, 'soul' | 'crons'>
@@ -426,18 +427,20 @@ interface CliAgentEntry {
  * Returns null on any failure (CLI not found, bad JSON, timeout).
  */
 export function listCliAgents(openclawBin: string): CliAgentEntry[] | null {
-  try {
-    const raw = execSync(`${openclawBin} agents list --json`, {
-      encoding: 'utf-8',
-      timeout: 10000,
-    })
-    const parsed = JSON.parse(raw)
-    const agents: unknown[] = Array.isArray(parsed) ? parsed : []
-    if (agents.length === 0) return null
-    return agents as CliAgentEntry[]
-  } catch {
-    return null
-  }
+  return cachedCallSync(`cli-agents:${openclawBin}`, 30_000, () => {
+    try {
+      const raw = execSync(`${openclawBin} agents list --json`, {
+        encoding: 'utf-8',
+        timeout: 10000,
+      })
+      const parsed = JSON.parse(raw)
+      const agents: unknown[] = Array.isArray(parsed) ? parsed : []
+      if (agents.length === 0) return null
+      return agents as CliAgentEntry[]
+    } catch {
+      return null
+    }
+  })
 }
 
 /**
@@ -675,6 +678,10 @@ function discoverRemoteAgentsFromConfig(workspacePath: string): AgentEntry[] {
  *   4. Bundled lib/agents.json               (default example registry)
  */
 export function loadRegistry(): AgentEntry[] {
+  return cachedCallSync('registry', 30_000, () => loadRegistryUncached())
+}
+
+function loadRegistryUncached(): AgentEntry[] {
   const workspacePath = process.env.WORKSPACE_PATH
   const openclawBin = process.env.OPENCLAW_BIN
   const gateways = loadGatewayProfiles(workspacePath)

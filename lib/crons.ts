@@ -7,6 +7,7 @@ import { loadGatewayProfiles, type GatewayProfile } from '@/lib/gateways'
 import { composeScopedAgentId, parseScopedAgentId } from '@/lib/scoped-agent-id'
 import { existsSync, readFileSync, readdirSync } from 'fs'
 import { join } from 'path'
+import { cachedCallSync } from '@/lib/cache'
 
 /**
  * Match a cron job name to an agent by prefix.
@@ -69,18 +70,20 @@ export async function getCrons(): Promise<CronJob[]> {
 }
 
 function fetchCronsViaCli(agentIds: string[]): CronJob[] {
-  try {
-    const openclawBin = requireEnv('OPENCLAW_BIN')
-    const raw = execSync(`${openclawBin} cron list --json`, {
-      encoding: 'utf-8',
-      timeout: 10000,
-    })
-    return parseCronJobs(raw, agentIds)
-  } catch (err) {
-    throw new Error(
-      `Failed to fetch cron jobs: ${err instanceof Error ? err.message : String(err)}`
-    )
-  }
+  const openclawBin = requireEnv('OPENCLAW_BIN')
+  const raw = cachedCallSync(`cron-cli:${openclawBin}`, 30_000, () => {
+    try {
+      return execSync(`${openclawBin} cron list --json`, {
+        encoding: 'utf-8',
+        timeout: 10000,
+      })
+    } catch (err) {
+      throw new Error(
+        `Failed to fetch cron jobs: ${err instanceof Error ? err.message : String(err)}`
+      )
+    }
+  })
+  return parseCronJobs(raw, agentIds)
 }
 
 async function fetchCronsViaHttp(gateway: GatewayProfile, agentIds: string[]): Promise<CronJob[]> {

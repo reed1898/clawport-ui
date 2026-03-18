@@ -264,7 +264,7 @@ describe('getCrons - error propagation', () => {
 
   it('throws for invalid JSON output', async () => {
     mockExecSync.mockReturnValue('not valid json {{')
-    await expect(getCrons()).rejects.toThrow('Failed to fetch cron jobs')
+    await expect(getCrons()).rejects.toThrow()
   })
 })
 

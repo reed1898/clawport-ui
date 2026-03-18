@@ -3,6 +3,7 @@ import { readFileSync, readdirSync, existsSync, statSync } from 'fs'
 import path from 'path'
 import { resolveWorkspacePath } from '@/lib/workspace'
 import { loadGatewayProfiles } from './gateways'
+import { cachedCallSync } from '@/lib/cache'
 
 /** Derive the cron runs directory from WORKSPACE_PATH */
 function getRunsDir(gatewayId?: string | null): string {
@@ -105,6 +106,12 @@ export function getLogEntries(opts?: { limit?: number; source?: string; gatewayI
   const limit = opts?.limit ?? 200
   const sourceFilter = opts?.source
   const gatewayId = opts?.gatewayId
+
+  const cacheKey = `logs:${gatewayId ?? 'all'}:${sourceFilter ?? 'all'}:${limit}`
+  return cachedCallSync(cacheKey, 15_000, () => getLogEntriesUncached(limit, sourceFilter, gatewayId))
+}
+
+function getLogEntriesUncached(limit: number, sourceFilter?: string, gatewayId?: string | null): LogEntry[] {
   const entries: LogEntry[] = []
 
   const gateways = gatewayId ? [loadGatewayProfiles().find(g => g.id === gatewayId) || loadGatewayProfiles()[0]] : loadGatewayProfiles()

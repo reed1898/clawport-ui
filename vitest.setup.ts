@@ -5,7 +5,13 @@
  *
  * We create a proper in-memory Storage polyfill that matches the Web Storage API.
  */
-import { beforeAll } from 'vitest'
+import { beforeAll, beforeEach } from 'vitest'
+import { invalidateCache } from '@/lib/cache'
+
+// Clear in-memory TTL cache between tests to prevent stale data leaking
+beforeEach(() => {
+  invalidateCache()
+})
 
 class MemoryStorage implements Storage {
   private store = new Map<string, string>()
