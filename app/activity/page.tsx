@@ -264,21 +264,38 @@ export default function ActivityPage() {
           </>
         ) : (
           <>
-            {/* Summary cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }} className="summary-cards-grid">
-              <TotalCard count={summary?.totalEntries ?? 0} />
-              <ErrorCard count={summary?.errorCount ?? 0} />
-              <SourcesCard cron={summary?.sources.cron ?? 0} config={summary?.sources.config ?? 0} />
-            </div>
+            {(() => {
+              const visibleEntries = agentFilter === 'all' ? entries : entries.filter(e => e.agentId === agentFilter);
+              const visibleSummary = agentFilter === 'all' ? summary : {
+                totalEntries: visibleEntries.length,
+                errorCount: visibleEntries.filter(e => e.level === 'error').length,
+                sources: {
+                  cron: visibleEntries.filter(e => e.source === 'cron').length,
+                  config: visibleEntries.filter(e => e.source === 'config').length,
+                },
+                timeRange: summary?.timeRange ?? null,
+                recentErrors: visibleEntries.filter(e => e.level === 'error').slice(0, 5),
+              };
+              return (
+                <>
+                  {/* Summary cards */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }} className="summary-cards-grid">
+                    <TotalCard count={visibleSummary?.totalEntries ?? 0} />
+                    <ErrorCard count={visibleSummary?.errorCount ?? 0} />
+                    <SourcesCard cron={visibleSummary?.sources.cron ?? 0} config={visibleSummary?.sources.config ?? 0} />
+                  </div>
 
-            {/* Log browser */}
-            <LogBrowser
-              entries={agentFilter === 'all' ? entries : entries.filter(e => e.agentId === agentFilter)}
-              summary={summary}
-              loading={false}
-              filter={filter}
-              onFilterChange={setFilter}
-            />
+                  {/* Log browser */}
+                  <LogBrowser
+                    entries={visibleEntries}
+                    summary={visibleSummary}
+                    loading={false}
+                    filter={filter}
+                    onFilterChange={setFilter}
+                  />
+                </>
+              );
+            })()}
           </>
         )}
       </div>

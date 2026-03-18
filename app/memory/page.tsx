@@ -2207,6 +2207,7 @@ export default function MemoryPage() {
               agentFilter={agentFilter}
               onGatewayChange={setGatewayFilter}
               onAgentChange={setAgentFilter}
+              showAgentFilter={false}
             />
             <button
               onClick={refresh}

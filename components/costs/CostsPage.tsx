@@ -299,6 +299,7 @@ export function CostsPage() {
             agentFilter={agentFilter}
             onGatewayChange={setGatewayFilter}
             onAgentChange={setAgentFilter}
+            showAgentFilter={false}
           />
         </div>
       </header>

@@ -9,6 +9,8 @@ export interface GatewayAgentFilterProps {
   agentFilter: string
   onGatewayChange: (id: string) => void
   onAgentChange: (id: string) => void
+  /** Hide the Agent dropdown (for pages where data has no agent dimension). Default: true */
+  showAgentFilter?: boolean
 }
 
 interface GatewayEntry {
@@ -32,6 +34,7 @@ export function GatewayAgentFilter({
   agentFilter,
   onGatewayChange,
   onAgentChange,
+  showAgentFilter = true,
 }: GatewayAgentFilterProps) {
   const gateways = useMemo(() => deriveGateways(agents), [agents])
   const hasMultipleGateways = gateways.length > 1
@@ -86,38 +89,42 @@ export function GatewayAgentFilter({
         ))}
       </select>
 
-      {/* Separator */}
-      <span style={{
-        width: 1,
-        height: 16,
-        background: 'var(--separator)',
-        flexShrink: 0,
-      }} />
+      {showAgentFilter && (
+        <>
+          {/* Separator */}
+          <span style={{
+            width: 1,
+            height: 16,
+            background: 'var(--separator)',
+            flexShrink: 0,
+          }} />
 
-      {/* Agent dropdown */}
-      <span style={{ fontSize: 'var(--text-caption2)', color: 'var(--text-tertiary)' }}>
-        Agent
-      </span>
-      <select
-        value={agentFilter}
-        onChange={(e) => onAgentChange(e.target.value)}
-        aria-label="Filter by agent"
-        style={{
-          fontSize: 'var(--text-caption1)',
-          fontWeight: 'var(--weight-medium)',
-          background: 'transparent',
-          border: 'none',
-          color: 'var(--text-primary)',
-          cursor: 'pointer',
-          outline: 'none',
-          padding: '4px 2px',
-        }}
-      >
-        <option value="all">All Agents</option>
-        {filteredAgents.map((a) => (
-          <option key={a.id} value={a.id}>{a.name}</option>
-        ))}
-      </select>
+          {/* Agent dropdown */}
+          <span style={{ fontSize: 'var(--text-caption2)', color: 'var(--text-tertiary)' }}>
+            Agent
+          </span>
+          <select
+            value={agentFilter}
+            onChange={(e) => onAgentChange(e.target.value)}
+            aria-label="Filter by agent"
+            style={{
+              fontSize: 'var(--text-caption1)',
+              fontWeight: 'var(--weight-medium)',
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--text-primary)',
+              cursor: 'pointer',
+              outline: 'none',
+              padding: '4px 2px',
+            }}
+          >
+            <option value="all">All Agents</option>
+            {filteredAgents.map((a) => (
+              <option key={a.id} value={a.id}>{a.name}</option>
+            ))}
+          </select>
+        </>
+      )}
     </div>
   )
 }
